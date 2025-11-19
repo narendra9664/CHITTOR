@@ -1,0 +1,809 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight, Check, Star, Zap, Shield, Camera, Video, FileText, Mail, Phone, MapPin, Instagram, Twitter, Facebook, Linkedin, ChevronDown, ChevronUp, Menu, X, Upload, Loader } from 'lucide-react';
+import './index.css';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const RAZORPAY_KEY = import.meta.env.VITE_RAZORPAY_KEY || 'rzp_test_Rg4YanWeF28b9d';
+
+const App = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('home');
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [bookingData, setBookingData] = useState({
+    name: '',
+    email: '',
+    contact: '',
+    videoFile: null,
+    plan: '',
+    amount: 0
+  });
+  const [currentBrandIndex, setCurrentBrandIndex] = useState(0);
+  const [bookingStatus, setBookingStatus] = useState('idle');
+  const [bookingId, setBookingId] = useState('');
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // Mock data for services
+  const services = [
+    {
+      id: 1,
+      title: "One Day Story",
+      description: "Capture your special moment with our professional one-day storytelling service.",
+      price: 999,
+      features: ["24-hour story coverage", "Basic editing", "Social media ready format", "1-day posting"],
+      icon: <Camera className="w-8 h-8" />
+    },
+    {
+      id: 2,
+      title: "Two's Story & Post",
+      description: "Perfect for couples or partners with extended coverage and premium post-production.",
+      price: 1499,
+      features: ["48-hour story coverage", "Advanced editing", "Custom transitions", "2-day posting"],
+      icon: <Video className="w-8 h-8" />
+    },
+    {
+      id: 3,
+      title: "Seven Days Premium",
+      description: "Comprehensive storytelling experience with extended coverage and premium features.",
+      price: 4999,
+      features: ["7-day story coverage", "Professional editing suite", "Custom graphics", "7-day posting", "Priority support"],
+      icon: <Zap className="w-8 h-8" />
+    },
+    {
+      id: 4,
+      title: "Permanent Posting",
+      description: "Create timeless memories with unlimited posting duration and archival quality.",
+      price: 7999,
+      features: ["Unlimited story coverage", "Premium editing & effects", "Archival quality", "Permanent posting", "Dedicated account manager", "Priority support"],
+      icon: <Shield className="w-8 h-8" />
+    }
+  ];
+
+  // Mock data for case studies
+  const caseStudies = [
+    {
+      id: 1,
+      client: "Jeeja Fashion",
+      result: "+200% engagement",
+      description: "Our storytelling approach helped Jeeja Fashion increase their social media engagement by 200% through compelling visual narratives."
+    },
+    {
+      id: 2,
+      client: "Udan",
+      result: "+150% conversions",
+      description: "By implementing our video storytelling strategy, Udan saw a 150% increase in conversion rates from their marketing campaigns."
+    },
+    {
+      id: 3,
+      client: "S.Tech Group",
+      result: "+300% brand awareness",
+      description: "S.Tech Group achieved tripled brand awareness through our comprehensive seven-day storytelling package."
+    }
+  ];
+
+  // Mock data for trusted brands
+  const trustedBrands = [
+    { name: "Jeeja Fashion", logo: "JF" },
+    { name: "Udan", logo: "U" },
+    { name: "Savari", logo: "S" },
+    { name: "S.Tech Group", logo: "STG" },
+    { name: "RK Enterprises", logo: "RKE" }
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentBrandIndex((prevIndex) => (prevIndex + 1) % trustedBrands.length);
+    }, 3000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleBookNow = (plan) => {
+    setSelectedPlan(plan);
+    setBookingData(prev => ({
+      ...prev,
+      plan: plan.title,
+      amount: plan.price
+    }));
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setBookingData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleFileChange = (e) => {
+    setBookingData(prev => ({
+      ...prev,
+      videoFile: e.target.files[0]
+    }));
+  };
+
+  const submitBooking = async () => {
+    setBookingStatus('submitting');
+    
+    const formData = new FormData();
+    formData.append('name', bookingData.name);
+    formData.append('email', bookingData.email);
+    formData.append('contact', bookingData.contact);
+    formData.append('video_file', bookingData.videoFile);
+    formData.append('plan', bookingData.plan);
+    formData.append('amount', bookingData.amount);
+    
+    try {
+      const response = await fetch(`${API_URL}/api/create/`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      const data = await response.json();
+      if (response.ok) {
+        setBookingId(data.booking_id);
+        setBookingStatus('booking_created');
+        // Proceed to payment
+        initiatePayment(data.booking_id);
+      } else {
+        setBookingStatus('error');
+      }
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      setBookingStatus('error');
+    }
+  };
+
+  const initiatePayment = async (bookingId) => {
+    setPaymentProcessing(true);
+    
+    try {
+      const response = await fetch(`${API_URL}/api/create-order/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          booking_id: bookingId
+        })
+      });
+      
+      const orderData = await response.json();
+      
+      if (response.ok) {
+        // Initialize Razorpay
+        const options = {
+          key: RAZORPAY_KEY,
+          amount: orderData.amount,
+          currency: orderData.currency,
+          name: 'chittorgarh_vlog',
+          description: bookingData.plan,
+          order_id: orderData.order_id,
+          handler: async function(response) {
+            // Verify payment
+            const verifyResponse = await fetch(`${API_URL}/api/verify-payment/`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                booking_id: bookingId
+              })
+            });
+            
+            if (verifyResponse.ok) {
+              setShowSuccess(true);
+              setBookingStatus('completed');
+            } else {
+              setBookingStatus('error');
+            }
+          },
+          prefill: {
+            name: bookingData.name,
+            email: bookingData.email,
+            contact: bookingData.contact
+          },
+          theme: {
+            color: '#00ff88'
+          }
+        };
+        
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } else {
+        setBookingStatus('error');
+      }
+    } catch (error) {
+      console.error('Error initiating payment:', error);
+      setBookingStatus('error');
+    } finally {
+      setPaymentProcessing(false);
+    }
+  };
+
+  const scrollToSection = (sectionId) => {
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+    setActiveSection(sectionId);
+    setIsMenuOpen(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-white text-gray-900 font-sans">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm border-b border-gray-100">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-8">
+              <div className="text-2xl font-bold text-gray-900">chittorgarh_vlog</div>
+            </div>
+            
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-8">
+              <button 
+                onClick={() => scrollToSection('home')} 
+                className={`text-sm font-medium transition-colors ${activeSection === 'home' ? 'text-green-500' : 'text-gray-600 hover:text-gray-900'}`}
+              >
+                Home
+              </button>
+              <button 
+                onClick={() => scrollToSection('services')} 
+                className={`text-sm font-medium transition-colors ${activeSection === 'services' ? 'text-green-500' : 'text-gray-600 hover:text-gray-900'}`}
+              >
+                Services
+              </button>
+              <button 
+                onClick={() => scrollToSection('pricing')} 
+                className={`text-sm font-medium transition-colors ${activeSection === 'pricing' ? 'text-green-500' : 'text-gray-600 hover:text-gray-900'}`}
+              >
+                Pricing
+              </button>
+              <button 
+                onClick={() => scrollToSection('contact')} 
+                className={`text-sm font-medium transition-colors ${activeSection === 'contact' ? 'text-green-500' : 'text-gray-600 hover:text-gray-900'}`}
+              >
+                Contact
+              </button>
+            </nav>
+            
+            <div className="flex items-center space-x-4">
+              <button className="hidden md:block px-6 py-2 bg-green-500 text-white rounded-full text-sm font-medium hover:bg-green-600 transition-colors">
+                Get Started
+              </button>
+              
+              {/* Mobile Menu Button */}
+              <button 
+                className="md:hidden p-2 text-gray-600 hover:text-gray-900"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+              >
+                {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden bg-white border-t border-gray-100"
+            >
+              <div className="container mx-auto px-4 py-4 flex flex-col space-y-4">
+                <button 
+                  onClick={() => scrollToSection('home')} 
+                  className={`text-sm font-medium py-2 ${activeSection === 'home' ? 'text-green-500' : 'text-gray-600'}`}
+                >
+                  Home
+                </button>
+                <button 
+                  onClick={() => scrollToSection('services')} 
+                  className={`text-sm font-medium py-2 ${activeSection === 'services' ? 'text-green-500' : 'text-gray-600'}`}
+                >
+                  Services
+                </button>
+                <button 
+                  onClick={() => scrollToSection('pricing')} 
+                  className={`text-sm font-medium py-2 ${activeSection === 'pricing' ? 'text-green-500' : 'text-gray-600'}`}
+                >
+                  Pricing
+                </button>
+                <button 
+                  onClick={() => scrollToSection('contact')} 
+                  className={`text-sm font-medium py-2 ${activeSection === 'contact' ? 'text-green-500' : 'text-gray-600'}`}
+                >
+                  Contact
+                </button>
+                <button className="px-6 py-2 bg-green-500 text-white rounded-full text-sm font-medium hover:bg-green-600 transition-colors">
+                  Get Started
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </header>
+
+      {/* Hero Section */}
+      <section id="home" className="pt-24 pb-16 md:pt-32 md:pb-24">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center gap-12">
+            <div className="md:w-1/2 space-y-6">
+              <h1 className="text-4xl md:text-5xl font-bold leading-tight">
+                Promote Your Brand to <span className="text-green-500">Chittorgarh's Audience</span>
+              </h1>
+              <p className="text-xl text-gray-600">
+                Reach 100,000+ engaged viewers in Chittorgarh with our professional video storytelling services. We specialize in connecting businesses with the local community.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button 
+                  onClick={() => scrollToSection('pricing')} 
+                  className="px-8 py-3 bg-green-500 text-white rounded-full text-lg font-medium hover:bg-green-600 transition-colors"
+                >
+                  Start Your Campaign
+                </button>
+                <button className="px-8 py-3 border border-gray-300 text-gray-700 rounded-full text-lg font-medium hover:bg-gray-50 transition-colors">
+                  Learn More
+                </button>
+              </div>
+            </div>
+            <div className="md:w-1/2">
+              <div className="relative">
+                <div className="absolute inset-0 bg-green-500 rounded-full opacity-10 transform -rotate-6"></div>
+                <div className="relative bg-white p-6 rounded-2xl shadow-lg">
+                  <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Video className="w-8 h-8 text-white" />
+                      </div>
+                      <p className="text-gray-600">Your story starts here</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Trusted Brands Row */}
+      <section className="py-12 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl font-bold text-center mb-8">Trusted by Local Businesses</h2>
+          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12">
+            {trustedBrands.map((brand, index) => (
+              <div 
+                key={index} 
+                className={`flex items-center justify-center w-40 h-16 bg-white rounded-lg shadow-sm hover:shadow-md transition-all ${
+                  index === currentBrandIndex ? 'scale-110' : ''
+                }`}
+              >
+                <span className="text-lg font-bold text-gray-800">{brand.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Services Grid */}
+      <section id="services" className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Why Choose chittorgarh_vlog?</h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              We're not just another video service – we're your local partner in reaching Chittorgarh's vibrant community.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-white border border-gray-100 rounded-2xl p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="p-3 rounded-full bg-green-100 text-green-600">
+                  <Star className="w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold mb-2">Massive Local Reach</h3>
+                  <p className="text-gray-600">
+                    Promote your brand with 100,000+ of the Chittorgarh audience. Our platform connects you directly with the community that matters most to your business.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-gray-900 text-white rounded-2xl p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="p-3 rounded-full bg-green-500 text-white">
+                  <Zap className="w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold mb-2">Proven Results</h3>
+                  <p className="text-gray-300">
+                    Average reach with chittorgarh_vlog is around 15,000 to 30,000 per story. Our content consistently delivers high engagement and measurable results.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white border border-gray-100 rounded-2xl p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="p-3 rounded-full bg-green-100 text-green-600">
+                  <Check className="w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold mb-2">Trusted Partner</h3>
+                  <p className="text-gray-600">
+                    Working with 80+ happy customers across Chittorgarh. We've built lasting relationships by delivering exceptional value and personalized service.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-gray-900 text-white rounded-2xl p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="p-3 rounded-full bg-green-500 text-white">
+                  <Shield className="w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold mb-2">Local Expertise</h3>
+                  <p className="text-gray-300">
+                    Particularly built for the Chittorgarh audience. We understand local culture, preferences, and what resonates with the community.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact CTA Strip */}
+      <section id="contact" className="py-16 bg-gray-900 text-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-3xl font-bold mb-4">Ready to Reach Chittorgarh?</h2>
+            <p className="text-xl mb-8 text-gray-300">
+              Contact us today to learn more about how our local storytelling services can help grow your business in Chittorgarh.
+            </p>
+            <button className="px-8 py-3 bg-green-500 text-white rounded-full text-lg font-medium hover:bg-green-600 transition-colors">
+              Get Your Free Proposal
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Case Studies Section */}
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Success Stories</h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              See how we've helped local businesses achieve remarkable results with our storytelling services.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {caseStudies.map((study, index) => (
+              <div 
+                key={study.id}
+                className="bg-gray-900 text-white rounded-2xl p-6 hover:shadow-lg transition-shadow"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <Star className="w-6 h-6 text-yellow-400" />
+                  <span className="text-lg font-bold">{study.client}</span>
+                </div>
+                <div className="text-2xl font-bold text-green-400 mb-4">{study.result}</div>
+                <p className="text-gray-300">{study.description}</p>
+                <button className="mt-4 text-green-400 hover:text-green-300 font-medium flex items-center gap-1">
+                  Learn More <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Simple, Transparent Pricing</h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Choose the perfect plan for your storytelling needs. All plans include professional editing and social media optimization.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {services.map((plan, index) => (
+              <div 
+                key={plan.id}
+                className={`rounded-2xl p-6 transition-all duration-300 hover:shadow-lg ${
+                  index === 2 
+                    ? 'border-2 border-green-500 relative' 
+                    : 'border border-gray-200'
+                }`}
+              >
+                {index === 2 && (
+                  <div className="absolute top-0 right-0 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">
+                    Most Popular
+                  </div>
+                )}
+                
+                <div className="text-center mb-6">
+                  <h3 className="text-xl font-bold mb-2">{plan.title}</h3>
+                  <div className="text-3xl font-bold mb-2">₹{plan.price}</div>
+                  <p className="text-gray-600">per project</p>
+                </div>
+                
+                <ul className="space-y-3 mb-6">
+                  {plan.features.map((feature, featureIndex) => (
+                    <li key={featureIndex} className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                
+                <button 
+                  onClick={() => handleBookNow(plan)}
+                  className={`w-full py-3 rounded-full font-medium transition-colors ${
+                    index === 2 
+                      ? 'bg-green-500 text-white hover:bg-green-600' 
+                      : 'bg-white text-gray-900 border border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  Choose Plan
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white pt-12 pb-8">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <div className="text-2xl font-bold mb-4">chittorgarh_vlog</div>
+              <p className="text-gray-400 mb-4">
+                Connecting local businesses with Chittorgarh's vibrant community through professional video storytelling.
+              </p>
+              <div className="flex space-x-4">
+                <a href="#" className="text-gray-400 hover:text-white">
+                  <Instagram className="w-5 h-5" />
+                </a>
+                <a href="#" className="text-gray-400 hover:text-white">
+                  <Twitter className="w-5 h-5" />
+                </a>
+                <a href="#" className="text-gray-400 hover:text-white">
+                  <Facebook className="w-5 h-5" />
+                </a>
+                <a href="#" className="text-gray-400 hover:text-white">
+                  <Linkedin className="w-5 h-5" />
+                </a>
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="text-lg font-bold mb-4">Quick Links</h4>
+              <ul className="space-y-2">
+                <li><button onClick={() => scrollToSection('home')} className="text-gray-400 hover:text-white">Home</button></li>
+                <li><button onClick={() => scrollToSection('services')} className="text-gray-400 hover:text-white">Services</button></li>
+                <li><button onClick={() => scrollToSection('pricing')} className="text-gray-400 hover:text-white">Pricing</button></li>
+                <li><button onClick={() => scrollToSection('contact')} className="text-gray-400 hover:text-white">Contact</button></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="text-lg font-bold mb-4">Contact Us</h4>
+              <div className="space-y-3 text-gray-400">
+                <div className="flex items-start gap-3">
+                  <Mail className="w-5 h-5 mt-1" />
+                  <span>info@chittorgarh_vlog.com</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Phone className="w-5 h-5 mt-1" />
+                  <span>+91 98765 43210</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-5 h-5 mt-1" />
+                  <span>123 Creative Street, Chittorgarh, India</span>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="text-lg font-bold mb-4">Newsletter</h4>
+              <p className="text-gray-400 mb-4">Subscribe to our newsletter for tips and updates.</p>
+              <form className="flex">
+                <input 
+                  type="email" 
+                  placeholder="Your email" 
+                  className="flex-1 px-3 py-2 bg-gray-800 text-white rounded-l-md focus:outline-none"
+                />
+                <button className="px-4 py-2 bg-green-500 text-white rounded-r-md hover:bg-green-600 transition-colors">
+                  Subscribe
+                </button>
+              </form>
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <p className="text-gray-400 text-sm">
+              © 2025 chittorgarh_vlog. All rights reserved.
+            </p>
+            <div className="flex space-x-6 mt-4 md:mt-0">
+              <a href="#" className="text-gray-400 text-sm hover:text-white">Privacy Policy</a>
+              <a href="#" className="text-gray-400 text-sm hover:text-white">Terms of Service</a>
+              <a href="#" className="text-gray-400 text-sm hover:text-white">Cookie Policy</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* Booking Modal */}
+      <AnimatePresence>
+        {selectedPlan && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={() => setSelectedPlan(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 50 }}
+              className="bg-white rounded-2xl p-6 w-full max-w-md mx-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold">Book Your Plan</h3>
+                <button onClick={() => setSelectedPlan(null)} className="text-gray-500 hover:text-gray-700">
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="mb-6">
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">Full Name</label>
+                  <input 
+                    type="text" 
+                    name="name"
+                    value={bookingData.name}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder="Your full name"
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">Email Address</label>
+                  <input 
+                    type="email" 
+                    name="email"
+                    value={bookingData.email}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder="your@email.com"
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">Contact Number</label>
+                  <input 
+                    type="tel" 
+                    name="contact"
+                    value={bookingData.contact}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder="Your contact number"
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">Upload Video (MP4)</label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                    <Upload className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-600 mb-2">Drag & drop your video here</p>
+                    <p className="text-sm text-gray-500 mb-2">or</p>
+                    <input 
+                      type="file" 
+                      accept="video/mp4"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      id="video-upload"
+                    />
+                    <label htmlFor="video-upload" className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors cursor-pointer">
+                      Browse Files
+                    </label>
+                    <p className="text-xs text-gray-500 mt-2">MP4 format only, max 500MB</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Selected Plan</label>
+                    <div className="px-3 py-2 bg-gray-100 rounded-md">{selectedPlan.title}</div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Total Amount</label>
+                    <div className="px-3 py-2 bg-gray-100 rounded-md">₹{selectedPlan.price}</div>
+                  </div>
+                </div>
+              </div>
+              
+              <button 
+                onClick={submitBooking}
+                disabled={bookingStatus === 'submitting' || paymentProcessing}
+                className="w-full py-3 bg-green-500 text-white rounded-full font-medium hover:bg-green-600 transition-colors flex items-center justify-center"
+              >
+                {paymentProcessing ? (
+                  <>
+                    <Loader className="w-5 h-5 mr-2 animate-spin" />
+                    Processing Payment...
+                  </>
+                ) : (
+                  'Proceed to Payment'
+                )}
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Success Modal */}
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 50 }}
+              className="bg-white rounded-2xl p-8 w-full max-w-md mx-auto text-center"
+            >
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Check className="w-8 h-8 text-green-500" />
+              </div>
+              <h3 className="text-2xl font-bold mb-2">Congratulations!</h3>
+              <p className="text-gray-600 mb-4">
+                Your booking has been successfully completed. We'll process your video and notify you when it's ready.
+              </p>
+              <p className="text-sm text-gray-500 mb-6">
+                Booking ID: {bookingId}
+              </p>
+              <button 
+                onClick={() => {
+                  setShowSuccess(false);
+                  setSelectedPlan(null);
+                  setBookingData({
+                    name: '',
+                    email: '',
+                    contact: '',
+                    videoFile: null,
+                    plan: '',
+                    amount: 0
+                  });
+                }}
+                className="px-6 py-2 bg-green-500 text-white rounded-full font-medium hover:bg-green-600 transition-colors"
+              >
+                Continue Browsing
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export default App;
