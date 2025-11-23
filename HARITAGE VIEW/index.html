@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hidden Wonders Travel Guides</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K0Q9G9JRSS"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-K0Q9G9JRSS');
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #4c51bf;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #4c51bf;
+        }
+
+        .cta-button {
+            background: linear-gradient(135deg, #4c51bf, #667eea);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(76, 81, 191, 0.3);
+        }
+
+        /* Hero Section */
+        .hero {
+            margin-top: 80px;
+            padding: 4rem 0;
+            text-align: center;
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #fff, #e2e8f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-cta {
+            background: rgba(255, 255, 255, 0.9);
+            color: #4c51bf;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-top: 2rem;
+            display: inline-block;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .hero-cta:hover {
+            background: white;
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Main Content */
+        .main-content {
+            background: white;
+            margin-top: 2rem;
+            border-radius: 20px 20px 0 0;
+            min-height: 80vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .main-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(76, 81, 191, 0.3), transparent);
+        }
+
+        .content-wrapper {
+            padding: 3rem 0;
+        }
+
+        /* Featured Guide */
+        .featured-guide {
+            margin-bottom: 4rem;
+        }
+
+        .featured-guide h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .guide-card {
+            background: linear-gradient(135deg, #f7fafc, #edf2f7);
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(76, 81, 191, 0.1);
+        }
+
+        .guide-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15);
+        }
+
+        .guide-header {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .guide-image {
+            width: 200px;
+            height: 150px;
+            background: linear-gradient(135deg, #4c51bf, #667eea);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3rem;
+            flex-shrink: 0;
+        }
+
+        .guide-info h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 0.5rem;
+        }
+
+        .guide-info .price {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #4c51bf;
+            margin-bottom: 1rem;
+        }
+
+        .guide-info p {
+            color: #4a5568;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .guide-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #4a5568;
+        }
+
+        .feature::before {
+            content: '✓';
+            color: #48bb78;
+            font-weight: bold;
+        }
+
+        .buy-button {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 2rem;
+        }
+
+        .buy-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(72, 187, 120, 0.3);
+        }
+
+        /* Coming Soon Section */
+        .coming-soon {
+            margin-top: 4rem;
+            text-align: center;
+        }
+
+        .coming-soon h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 2rem;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .preview-card {
+            background: linear-gradient(135deg, #faf5ff, #f3e8ff);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            border: 2px dashed #9f7aea;
+            transition: all 0.3s ease;
+        }
+
+        .preview-card:hover {
+            transform: translateY(-3px);
+            border-color: #805ad5;
+        }
+
+        .preview-card h3 {
+            color: #553c9a;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .preview-card p {
+            color: #6b46c1;
+            font-size: 0.9rem;
+        }
+
+        /* Newsletter */
+        .newsletter {
+            background: linear-gradient(135deg, #1a202c, #2d3748);
+            color: white;
+            padding: 4rem 2rem;
+            margin-top: 4rem;
+            text-align: center;
+            border-radius: 20px;
+        }
+
+        .newsletter h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .newsletter p {
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .newsletter-form {
+            display: flex;
+            gap: 1rem;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .newsletter input {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+        }
+
+        .newsletter button {
+            background: linear-gradient(135deg, #4c51bf, #667eea);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .guide-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .newsletter-form {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="#" class="logo"> Heritage View</a>
+            <ul class="nav-links">
+                <li><a href="#guides">Guides</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+            <a href="#featured" class="cta-button">Browse Guides</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Discover India's Hidden Heritage</h1>
+            <p>Premium digital travel guides that unlock secret destinations and local experiences across India's rich cultural landscape. Expertly crafted for travelers seeking authentic heritage adventures.</p>
+            <a href="#featured" class="hero-cta">Explore Our Guides</a>
+        </div>
+    </section>
+
+    <main class="main-content">
+        <div class="container content-wrapper">
+            <section id="featured" class="featured-guide">
+                <h2>Featured Travel Guide</h2>
+                <div class="guide-card">
+                    <div class="guide-header">
+                        <div class="guide-image">
+                            <img src="downloads/chittorgarh.jpg.jpg" alt="Chittorgarh Fort" style="width: 100%; height: 100%; object-fit: cover; border-radius: 15px;">
+                    
+                    </div>
+                        <div class="guide-info">
+                            <h3>Hidden Gems of Chittorgarh</h3>
+                            <p>Complete guide to Chittorgarh Fort, ancient palaces, sacred temples, and bustling local markets. Includes historical context, photography tips, and insider recommendations for the best local experiences.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="guide-features">
+                        <div class="feature">19 pages of expert content</div>
+                        <div class="feature">Complete fort exploration guide</div>
+                        <div class="feature">Historic palaces walkthrough</div>
+                        <div class="feature">Sacred temples directory</div>
+                        <div class="feature">Local markets & shopping tips</div>
+                        <div class="feature">Photography spots & timing</div>
+                        <div class="feature">Historical context & stories</div>
+                        <div class="feature">Instant PDF download</div>
+                    </div>
+                    
+                    <!-- Form with user information fields -->
+                    <button id="initiateDownload" class="buy-button">Download Guide</button>
+                </div>
+            </section>
+
+            <section class="coming-soon">
+                <h2>More Adventures Coming Soon</h2>
+                <p>We're crafting more incredible travel guides to help you discover the world's best-kept secrets.</p>
+                
+                <div class="preview-grid">
+                    <div class="preview-card">
+                        <h3>🏰 Rajasthan Royal Secrets</h3>
+                        <p>Hidden palaces and forgotten stories of Rajasthan</p>
+                    </div>
+                    <div class="preview-card">
+                        <h3>🕌 Delhi's Hidden Heritage</h3>
+                        <p>Ancient monuments and secret corners of Old Delhi</p>
+                    </div>
+                    <div class="preview-card">
+                        <h3>⛰️ Himachal Hidden Trails</h3>
+                        <p>Secret mountain paths and traditional villages</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="newsletter">
+                <h2>Get Notified of New Guides</h2>
+                <p>Be the first to know when we release new travel guides and get exclusive early-bird pricing.</p>
+                <form class="newsletter-form">
+                    <input type="email" placeholder="Enter your email address" required>
+                    <button type="submit">Subscribe</button>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <!-- Add this before </body> -->
+<div id="userInfoModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3 style="margin-bottom: 1.5rem; color: #4c51bf;">Enter Your Details to Download</h3>
+        <form id="userDetailsForm">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <label for="userFirstName" style="display: block; margin-bottom: 0.5rem; color: #4a5568;">First Name *</label>
+                    <input type="text" id="userFirstName" required style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px;">
+                </div>
+                <div>
+                    <label for="userLastName" style="display: block; margin-bottom: 0.5rem; color: #4a5568;">Last Name *</label>
+                    <input type="text" id="userLastName" required style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px;">
+                </div>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label for="userEmail" style="display: block; margin-bottom: 0.5rem; color: #4a5568;">Email Address *</label>
+                <input type="email" id="userEmail" required style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px;">
+            </div>
+            <div style="margin-bottom: 1.5rem;">
+                <label for="userPhone" style="display: block; margin-bottom: 0.5rem; color: #4a5568;">Phone Number *</label>
+                <input type="tel" id="userPhone" required style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px;">
+            </div>
+            <button type="submit" class="buy-button" style="width: 100%;">Download Now</button>
+        </form>
+    </div>
+</div>
+
+    <script>
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Header scroll effect
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 100) {
+                header.style.background = 'rgba(255, 255, 255, 0.98)';
+                header.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.1)';
+            } else {
+                header.style.background = 'rgba(255, 255, 255, 0.95)';
+                header.style.boxShadow = 'none';
+            }
+        });
+
+        // Newsletter form submission
+        document.querySelector('.newsletter-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = this.querySelector('input[type="email"]').value;
+            alert('Thank you for subscribing! We\'ll notify you about new travel guides.');
+            this.reset();
+        });
+
+
+
+        // Handle user details form submission for PDF download
+        document.getElementById('initiateDownload').addEventListener('click', function() {
+            const firstName = document.getElementById('userFirstName').value;
+            const lastName = document.getElementById('userLastName').value;
+            const email = document.getElementById('userEmail').value;
+            const phone = document.getElementById('userPhone').value;
+            
+            if (!firstName || !lastName || !email || !phone) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            // Show loading state
+            const button = document.getElementById('initiateDownload');
+            const originalText = button.innerHTML;
+            button.innerHTML = 'Processing Download...';
+            button.disabled = true;
+            
+            // Collect user data
+            const userData = {
+                name: firstName + ' ' + lastName,
+                email: email,
+                phone: phone,
+                timestamp: new Date().toISOString(),
+                source: 'pdf_download'
+            };
+            
+            console.log('User data collected for download:', userData);
+            
+            // Send user data to server API
+            fetch('/api/collect-user-data', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(userData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.error || 'Server error'); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Show download section
+                    document.getElementById('userFormSection').style.display = 'none';
+                    document.getElementById('downloadSection').style.display = 'block';
+                    
+                    // Trigger automatic download after a short delay
+                    setTimeout(function() {
+                        const link = document.createElement('a');
+                        link.href = data.downloadUrl || '/downloads/chittorgarh-guide.pdf';
+                        link.download = 'chittorgarh-guide.pdf';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }, 1000); // Wait 1 second before auto-download
+                } else {
+                    throw new Error(data.message || 'Failed to process your request');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('There was an error processing your request. Please try again.');
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        });
+
+        // Modal functionality
+        const modal = document.getElementById('userInfoModal');
+        const closeModalBtn = document.querySelector('.close-modal');
+
+        document.getElementById('initiateDownload').addEventListener('click', function() {
+            modal.style.display = 'flex';
+        });
+
+        closeModalBtn.addEventListener('click', function() {
+            modal.style.display = 'none';
+        });
+
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // User details form submission
+        document.getElementById('userDetailsForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const firstName = document.getElementById('userFirstName').value;
+            const lastName = document.getElementById('userLastName').value;
+            const email = document.getElementById('userEmail').value;
+            const phone = document.getElementById('userPhone').value;
+
+            // Basic validation
+            if (!firstName || !lastName || !email || !phone) {
+                alert('Please fill in all fields marked with *');
+                return;
+            }
+
+            // Show loading state
+            const button = this.querySelector('button[type="submit"]');
+            const originalText = button.innerHTML;
+            button.innerHTML = 'Processing...';
+            button.disabled = true;
+
+            // Collect user data
+            const userData = {
+                name: `${firstName} ${lastName}`,
+                email: email,
+                phone: phone,
+                timestamp: new Date().toISOString(),
+                source: 'pdf_download'
+            };
+
+            console.log('User data for download:', userData);
+
+            // Send data to server (mocked API call)
+            setTimeout(() => {
+                // Hide modal
+                modal.style.display = 'none';
+
+                // Show success message (you can replace this with your download logic)
+                alert('Thank you! Your download will start shortly.');
+
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }, 2000);
+        });
+
+        document.getElementById('initiateDownload').addEventListener('click', function() {
+            document.getElementById('userInfoModal').style.display = 'flex';
+        });
+
+        document.querySelector('.close-modal').addEventListener('click', function() {
+            document.getElementById('userInfoModal').style.display = 'none';
+        });
+
+        window.addEventListener('click', function(event) {
+            if (event.target == document.getElementById('userInfoModal')) {
+                document.getElementById('userInfoModal').style.display = 'none';
+            }
+        });
+
+        document.getElementById('userDetailsForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const userData = {
+                name: document.getElementById('userFirstName').value + ' ' + document.getElementById('userLastName').value,
+                email: document.getElementById('userEmail').value,
+                phone: document.getElementById('userPhone').value,
+                timestamp: new Date().toISOString(),
+                source: 'pdf_download'
+            };
+            
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+            submitButton.innerHTML = 'Processing...';
+            submitButton.disabled = true;
+
+            // Send user data to server
+            fetch('/api/collect-user-data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close modal
+                    document.getElementById('userInfoModal').style.display = 'none';
+                    
+                    // Trigger download
+                    const link = document.createElement('a');
+                    link.href = data.downloadUrl || '/downloads/chittorgarh-guide.pdf';
+                    link.download = 'chittorgarh-guide.pdf';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // Reset form
+                    this.reset();
+                } else {
+                    throw new Error(data.message || 'Download failed');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('There was an error processing your download. Please try again.');
+            })
+            .finally(() => {
+                submitButton.innerHTML = originalText;
+                submitButton.disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>

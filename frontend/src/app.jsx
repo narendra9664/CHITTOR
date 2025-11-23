@@ -4,8 +4,6 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Check, Star, Zap, Shield, Camera, Video, FileText, Mail, Phone, MapPin, Instagram, Twitter, Facebook, Linkedin, ChevronDown, ChevronUp, Menu, X, Upload, Loader, Download } from 'lucide-react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import './index.css';
 
 gsap.registerPlugin(ScrollTrigger);
