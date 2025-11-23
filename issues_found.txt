@@ -1,0 +1,33 @@
+Issues Found in the Codebase:
+
+1. Frontend (app.jsx):
+   - Razorpay is accessed via window.Razorpay without checking if it's loaded
+   - No proper error handling for file upload size/type validation
+   - Missing environment variable validation
+   - Potential XSS vulnerability with booking_id display
+
+2. Backend (views.py):
+   - Weak email validation (just checking for @ and .)
+   - Missing rate limiting on API endpoints
+   - Insecure file upload without proper virus/malware scanning
+   - Error messages in responses might expose system information
+   - Missing authentication/authorization for admin endpoints
+   - No input sanitization for names and other string fields
+   - Unsafe use of send_mail function
+   - Missing proper logging on sensitive operations
+
+3. Security:
+   - Razorpay credentials might be exposed in frontend
+   - Missing CSRF protection
+   - Missing proper CORS configuration
+   - Missing authentication for sensitive operations
+
+4. Code Quality:
+   - Missing proper comments and documentation
+   - Inconsistent error handling patterns
+   - Magic numbers and strings should be constants
+
+5. Performance:
+   - No caching implemented
+   - Large file uploads might cause timeout issues
+   - No pagination for bookings list

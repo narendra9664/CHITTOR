@@ -16,8 +16,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'replace-me-with-env-secret')
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',') if os.environ.get('ALLOWED_HOSTS') else ['*']
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'  # Default to False in production
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if os.environ.get('ALLOWED_HOSTS') else ['localhost', '127.0.0.1']
+
+# Security settings
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_SSL_REDIRECT = not DEBUG  # Only if using HTTPS
+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True if not DEBUG else False
+SECURE_HSTS_PRELOAD = True if not DEBUG else False
+SESSION_COOKIE_SECURE = not DEBUG  # Only if using HTTPS
+CSRF_COOKIE_SECURE = not DEBUG  # Only if using HTTPS
 
 
 # Application definition
@@ -32,6 +43,9 @@ INSTALLED_APPS = [
     'corsheaders',
     'api',  # Our API app
 ]
+
+# Ensure APPEND_SLASH is True for normal Django behavior
+APPEND_SLASH = True
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -111,14 +125,17 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files (user uploads)
+# Media files (user uploads)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 
 # Razorpay and other env-based configuration
 RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', '')
 RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', '')
 
 # Email (optional)
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587)) if os.environ.get('EMAIL_PORT') else None
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
@@ -126,11 +143,20 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
 
 
+
 # Django REST framework / CORS
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
-    ]
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/day',
+        'user': '1000/day'
+    }
 }
 
 CORS_ALLOWED_ORIGINS = [
@@ -140,8 +166,19 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",      # Alternative localhost
 ]
 
-# Fallback to allow all origins for development
-CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'True') == 'True'
+# Add production frontend URL if provided
+frontend_url = os.environ.get('FRONTEND_URL')
+if frontend_url:
+    CORS_ALLOWED_ORIGINS.append(frontend_url)
+    # Also allow without trailing slash
+    if frontend_url.endswith('/'):
+        CORS_ALLOWED_ORIGINS.append(frontend_url.rstrip('/'))
+    else:
+        CORS_ALLOWED_ORIGINS.append(frontend_url + '/')
+
+# Fallback to allow all origins ONLY in development
+CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'True' if DEBUG else 'False') == 'True'
+
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

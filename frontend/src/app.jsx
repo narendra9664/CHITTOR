@@ -1,7 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Check, Star, Zap, Shield, Camera, Video, FileText, Mail, Phone, MapPin, Instagram, Twitter, Facebook, Linkedin, ChevronDown, ChevronUp, Menu, X, Upload, Loader } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowRight, Check, Star, Zap, Shield, Camera, Video, FileText, Mail, Phone, MapPin, Instagram, Twitter, Facebook, Linkedin, ChevronDown, ChevronUp, Menu, X, Upload, Loader, Download } from 'lucide-react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import './index.css';
+
+gsap.registerPlugin(ScrollTrigger);
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const RAZORPAY_KEY = import.meta.env.VITE_RAZORPAY_KEY || 'rzp_test_Rg4YanWeF28b9d';
@@ -95,8 +102,98 @@ const App = () => {
     const interval = setInterval(() => {
       setCurrentBrandIndex((prevIndex) => (prevIndex + 1) % trustedBrands.length);
     }, 3000);
-    
+
     return () => clearInterval(interval);
+  }, []);
+
+  // GSAP Animation Refs
+  const heroVideoRef = useRef(null);
+  const serviceCardsRef = useRef([]);
+  const pricingCardsRef = useRef([]);
+
+  // Hero 3D Animation Effect
+  useEffect(() => {
+    if (heroVideoRef.current) {
+      // Create floating 3D effect for the video icon
+      gsap.to(heroVideoRef.current, {
+        y: -20,
+        rotationX: 15,
+        rotationY: -10,
+        duration: 2,
+        repeat: -1,
+        yoyo: true,
+        ease: "power1.inOut",
+        transformPerspective: 1000,
+        transformStyle: "preserve-3d"
+      });
+
+      // Pulsing glow effect
+      gsap.to(heroVideoRef.current.querySelector('.video-icon-glow'), {
+        scale: 1.1,
+        opacity: 0.8,
+        duration: 1.5,
+        repeat: -1,
+        yoyo: true,
+        ease: "power1.inOut"
+      });
+    }
+  }, []);
+
+  // Scroll-triggered animations for service cards
+  useEffect(() => {
+    serviceCardsRef.current.forEach((card, index) => {
+      if (card) {
+        gsap.fromTo(card,
+          {
+            opacity: 0,
+            y: 100,
+            rotationX: -30,
+            transformPerspective: 1000
+          },
+          {
+            opacity: 1,
+            y: 0,
+            rotationX: 0,
+            duration: 1,
+            delay: index * 0.2,
+            scrollTrigger: {
+              trigger: card,
+              start: "top 80%",
+              end: "top 20%",
+              toggleActions: "play none none reverse"
+            }
+          }
+        );
+      }
+    });
+  }, []);
+
+  // Scroll-triggered animations for pricing cards
+  useEffect(() => {
+    pricingCardsRef.current.forEach((card, index) => {
+      if (card) {
+        gsap.fromTo(card,
+          {
+            opacity: 0,
+            scale: 0.8,
+            rotationY: -45,
+            transformPerspective: 1000
+          },
+          {
+            opacity: 1,
+            scale: 1,
+            rotationY: 0,
+            duration: 0.8,
+            delay: index * 0.15,
+            scrollTrigger: {
+              trigger: card,
+              start: "top 85%",
+              toggleActions: "play none none reverse"
+            }
+          }
+        );
+      }
+    });
   }, []);
 
   const handleBookNow = (plan) => {
@@ -117,15 +214,32 @@ const App = () => {
   };
 
   const handleFileChange = (e) => {
-    setBookingData(prev => ({
-      ...prev,
-      videoFile: e.target.files[0]
-    }));
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['video/mp4', 'video/mpeg', 'video/quicktime', 'video/x-msvideo'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Only MP4, MPEG, MOV, and AVI video files are allowed');
+        return;
+      }
+
+      // Validate file size (max 500MB)
+      const maxSize = 500 * 1024 * 1024; // 500MB in bytes
+      if (file.size > maxSize) {
+        alert('File size exceeds 500MB limit');
+        return;
+      }
+
+      setBookingData(prev => ({
+        ...prev,
+        videoFile: file
+      }));
+    }
   };
 
   const submitBooking = async () => {
     setBookingStatus('submitting');
-    
+
     const formData = new FormData();
     formData.append('name', bookingData.name);
     formData.append('email', bookingData.email);
@@ -133,13 +247,13 @@ const App = () => {
     formData.append('video_file', bookingData.videoFile);
     formData.append('plan', bookingData.plan);
     formData.append('amount', bookingData.amount);
-    
+
     try {
       const response = await fetch(`${API_URL}/api/create/`, {
         method: 'POST',
         body: formData
       });
-      
+
       const data = await response.json();
       if (response.ok) {
         setBookingId(data.booking_id);
@@ -147,6 +261,7 @@ const App = () => {
         // Proceed to payment
         initiatePayment(data.booking_id);
       } else {
+        alert(`Booking failed: ${data.error || 'Unknown error'}`);
         setBookingStatus('error');
       }
     } catch (error) {
@@ -157,8 +272,16 @@ const App = () => {
 
   const initiatePayment = async (bookingId) => {
     setPaymentProcessing(true);
-    
+
     try {
+      // Check if Razorpay is loaded
+      if (!window.Razorpay) {
+        console.error('Razorpay SDK not loaded');
+        setBookingStatus('error');
+        setPaymentProcessing(false);
+        return;
+      }
+
       const response = await fetch(`${API_URL}/api/create-order/`, {
         method: 'POST',
         headers: {
@@ -168,9 +291,9 @@ const App = () => {
           booking_id: bookingId
         })
       });
-      
+
       const orderData = await response.json();
-      
+
       if (response.ok) {
         // Initialize Razorpay
         const options = {
@@ -180,7 +303,7 @@ const App = () => {
           name: 'chittorgarh_vlog',
           description: bookingData.plan,
           order_id: orderData.order_id,
-          handler: async function(response) {
+          handler: async function (response) {
             // Verify payment
             const verifyResponse = await fetch(`${API_URL}/api/verify-payment/`, {
               method: 'POST',
@@ -194,11 +317,13 @@ const App = () => {
                 booking_id: bookingId
               })
             });
-            
+
             if (verifyResponse.ok) {
               setShowSuccess(true);
               setBookingStatus('completed');
             } else {
+              const errorData = await verifyResponse.json();
+              alert(`Payment failed: ${errorData.error || 'Unknown error'}`);
               setBookingStatus('error');
             }
           },
@@ -211,7 +336,7 @@ const App = () => {
             color: '#00ff88'
           }
         };
-        
+
         const rzp = new window.Razorpay(options);
         rzp.open();
       } else {
@@ -240,42 +365,49 @@ const App = () => {
             <div className="flex items-center space-x-8">
               <div className="text-2xl font-bold text-gray-900">chittorgarh_vlog</div>
             </div>
-            
+
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
-              <button 
-                onClick={() => scrollToSection('home')} 
+              <button
+                onClick={() => scrollToSection('home')}
                 className={`text-sm font-medium transition-colors ${activeSection === 'home' ? 'text-green-500' : 'text-gray-600 hover:text-gray-900'}`}
               >
                 Home
               </button>
-              <button 
-                onClick={() => scrollToSection('services')} 
+              <button
+                onClick={() => scrollToSection('services')}
                 className={`text-sm font-medium transition-colors ${activeSection === 'services' ? 'text-green-500' : 'text-gray-600 hover:text-gray-900'}`}
               >
                 Services
               </button>
-              <button 
-                onClick={() => scrollToSection('pricing')} 
+              <button
+                onClick={() => scrollToSection('pricing')}
                 className={`text-sm font-medium transition-colors ${activeSection === 'pricing' ? 'text-green-500' : 'text-gray-600 hover:text-gray-900'}`}
               >
                 Pricing
               </button>
-              <button 
-                onClick={() => scrollToSection('contact')} 
+              <Link
+                to="/downloads"
+                className="text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 flex items-center gap-1"
+              >
+                <Download className="w-4 h-4" />
+                Downloads
+              </Link>
+              <button
+                onClick={() => scrollToSection('contact')}
                 className={`text-sm font-medium transition-colors ${activeSection === 'contact' ? 'text-green-500' : 'text-gray-600 hover:text-gray-900'}`}
               >
                 Contact
               </button>
             </nav>
-            
+
             <div className="flex items-center space-x-4">
               <button className="hidden md:block px-6 py-2 bg-green-500 text-white rounded-full text-sm font-medium hover:bg-green-600 transition-colors">
                 Get Started
               </button>
-              
+
               {/* Mobile Menu Button */}
-              <button 
+              <button
                 className="md:hidden p-2 text-gray-600 hover:text-gray-900"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
               >
@@ -284,7 +416,7 @@ const App = () => {
             </div>
           </div>
         </div>
-        
+
         {/* Mobile Menu */}
         <AnimatePresence>
           {isMenuOpen && (
@@ -295,26 +427,34 @@ const App = () => {
               className="md:hidden bg-white border-t border-gray-100"
             >
               <div className="container mx-auto px-4 py-4 flex flex-col space-y-4">
-                <button 
-                  onClick={() => scrollToSection('home')} 
+                <button
+                  onClick={() => scrollToSection('home')}
                   className={`text-sm font-medium py-2 ${activeSection === 'home' ? 'text-green-500' : 'text-gray-600'}`}
                 >
                   Home
                 </button>
-                <button 
-                  onClick={() => scrollToSection('services')} 
+                <button
+                  onClick={() => scrollToSection('services')}
                   className={`text-sm font-medium py-2 ${activeSection === 'services' ? 'text-green-500' : 'text-gray-600'}`}
                 >
                   Services
                 </button>
-                <button 
-                  onClick={() => scrollToSection('pricing')} 
+                <button
+                  onClick={() => scrollToSection('pricing')}
                   className={`text-sm font-medium py-2 ${activeSection === 'pricing' ? 'text-green-500' : 'text-gray-600'}`}
                 >
                   Pricing
                 </button>
-                <button 
-                  onClick={() => scrollToSection('contact')} 
+                <Link
+                  to="/downloads"
+                  className="text-sm font-medium py-2 text-gray-600 flex items-center gap-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Download className="w-4 h-4" />
+                  Downloads
+                </Link>
+                <button
+                  onClick={() => scrollToSection('contact')}
                   className={`text-sm font-medium py-2 ${activeSection === 'contact' ? 'text-green-500' : 'text-gray-600'}`}
                 >
                   Contact
@@ -340,8 +480,8 @@ const App = () => {
                 Reach 100,000+ engaged viewers in Chittorgarh with our professional video storytelling services. We specialize in connecting businesses with the local community.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <button 
-                  onClick={() => scrollToSection('pricing')} 
+                <button
+                  onClick={() => scrollToSection('pricing')}
                   className="px-8 py-3 bg-green-500 text-white rounded-full text-lg font-medium hover:bg-green-600 transition-colors"
                 >
                   Start Your Campaign
@@ -355,12 +495,27 @@ const App = () => {
               <div className="relative">
                 <div className="absolute inset-0 bg-green-500 rounded-full opacity-10 transform -rotate-6"></div>
                 <div className="relative bg-white p-6 rounded-2xl shadow-lg">
-                  <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Video className="w-8 h-8 text-white" />
+                  <div
+                    className="aspect-video rounded-lg flex items-center justify-center overflow-hidden relative"
+                    style={{
+                      backgroundImage: 'url(https://images.unsplash.com/photo-1609920658906-8223bd289001?q=80&w=2000)',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}
+                  >
+                    {/* Dark overlay for better text visibility */}
+                    <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+
+                    <div className="text-center relative z-10" ref={heroVideoRef} style={{ transformStyle: 'preserve-3d' }}>
+                      <div className="relative inline-block">
+                        {/* Glowing background effect */}
+                        <div className="video-icon-glow absolute inset-0 bg-green-400 rounded-full blur-xl opacity-60"></div>
+                        {/* Main play icon */}
+                        <div className="relative w-24 h-24 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-2xl cursor-pointer hover:scale-110 transition-transform">
+                          <Video className="w-12 h-12 text-white" />
+                        </div>
                       </div>
-                      <p className="text-gray-600">Your story starts here</p>
+                      <p className="text-white font-bold text-xl drop-shadow-lg">Your story starts here</p>
                     </div>
                   </div>
                 </div>
@@ -376,11 +531,10 @@ const App = () => {
           <h2 className="text-2xl font-bold text-center mb-8">Trusted by Local Businesses</h2>
           <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12">
             {trustedBrands.map((brand, index) => (
-              <div 
-                key={index} 
-                className={`flex items-center justify-center w-40 h-16 bg-white rounded-lg shadow-sm hover:shadow-md transition-all ${
-                  index === currentBrandIndex ? 'scale-110' : ''
-                }`}
+              <div
+                key={index}
+                className={`flex items-center justify-center w-40 h-16 bg-white rounded-lg shadow-sm hover:shadow-md transition-all ${index === currentBrandIndex ? 'scale-110' : ''
+                  }`}
               >
                 <span className="text-lg font-bold text-gray-800">{brand.name}</span>
               </div>
@@ -398,9 +552,9 @@ const App = () => {
               We're not just another video service – we're your local partner in reaching Chittorgarh's vibrant community.
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white border border-gray-100 rounded-2xl p-6 hover:shadow-lg transition-shadow">
+            <div ref={el => serviceCardsRef.current[0] = el} className="bg-white border border-gray-100 rounded-2xl p-6 hover:shadow-lg transition-shadow">
               <div className="flex items-start gap-4 mb-4">
                 <div className="p-3 rounded-full bg-green-100 text-green-600">
                   <Star className="w-8 h-8" />
@@ -413,8 +567,8 @@ const App = () => {
                 </div>
               </div>
             </div>
-            
-            <div className="bg-gray-900 text-white rounded-2xl p-6 hover:shadow-lg transition-shadow">
+
+            <div ref={el => serviceCardsRef.current[1] = el} className="bg-gray-900 text-white rounded-2xl p-6 hover:shadow-lg transition-shadow">
               <div className="flex items-start gap-4 mb-4">
                 <div className="p-3 rounded-full bg-green-500 text-white">
                   <Zap className="w-8 h-8" />
@@ -427,8 +581,8 @@ const App = () => {
                 </div>
               </div>
             </div>
-            
-            <div className="bg-white border border-gray-100 rounded-2xl p-6 hover:shadow-lg transition-shadow">
+
+            <div ref={el => serviceCardsRef.current[2] = el} className="bg-white border border-gray-100 rounded-2xl p-6 hover:shadow-lg transition-shadow">
               <div className="flex items-start gap-4 mb-4">
                 <div className="p-3 rounded-full bg-green-100 text-green-600">
                   <Check className="w-8 h-8" />
@@ -441,8 +595,8 @@ const App = () => {
                 </div>
               </div>
             </div>
-            
-            <div className="bg-gray-900 text-white rounded-2xl p-6 hover:shadow-lg transition-shadow">
+
+            <div ref={el => serviceCardsRef.current[3] = el} className="bg-gray-900 text-white rounded-2xl p-6 hover:shadow-lg transition-shadow">
               <div className="flex items-start gap-4 mb-4">
                 <div className="p-3 rounded-full bg-green-500 text-white">
                   <Shield className="w-8 h-8" />
@@ -483,10 +637,10 @@ const App = () => {
               See how we've helped local businesses achieve remarkable results with our storytelling services.
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {caseStudies.map((study, index) => (
-              <div 
+              <div
                 key={study.id}
                 className="bg-gray-900 text-white rounded-2xl p-6 hover:shadow-lg transition-shadow"
               >
@@ -514,29 +668,29 @@ const App = () => {
               Choose the perfect plan for your storytelling needs. All plans include professional editing and social media optimization.
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {services.map((plan, index) => (
-              <div 
+              <div
                 key={plan.id}
-                className={`rounded-2xl p-6 transition-all duration-300 hover:shadow-lg ${
-                  index === 2 
-                    ? 'border-2 border-green-500 relative' 
-                    : 'border border-gray-200'
-                }`}
+                ref={el => pricingCardsRef.current[index] = el}
+                className={`rounded-2xl p-6 transition-all duration-300 hover:shadow-lg ${index === 2
+                  ? 'border-2 border-green-500 relative'
+                  : 'border border-gray-200'
+                  }`}
               >
                 {index === 2 && (
                   <div className="absolute top-0 right-0 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">
                     Most Popular
                   </div>
                 )}
-                
+
                 <div className="text-center mb-6">
                   <h3 className="text-xl font-bold mb-2">{plan.title}</h3>
                   <div className="text-3xl font-bold mb-2">₹{plan.price}</div>
                   <p className="text-gray-600">per project</p>
                 </div>
-                
+
                 <ul className="space-y-3 mb-6">
                   {plan.features.map((feature, featureIndex) => (
                     <li key={featureIndex} className="flex items-center gap-2">
@@ -545,14 +699,13 @@ const App = () => {
                     </li>
                   ))}
                 </ul>
-                
-                <button 
+
+                <button
                   onClick={() => handleBookNow(plan)}
-                  className={`w-full py-3 rounded-full font-medium transition-colors ${
-                    index === 2 
-                      ? 'bg-green-500 text-white hover:bg-green-600' 
-                      : 'bg-white text-gray-900 border border-gray-300 hover:bg-gray-50'
-                  }`}
+                  className={`w-full py-3 rounded-full font-medium transition-colors ${index === 2
+                    ? 'bg-green-500 text-white hover:bg-green-600'
+                    : 'bg-white text-gray-900 border border-gray-300 hover:bg-gray-50'
+                    }`}
                 >
                   Choose Plan
                 </button>
@@ -586,7 +739,7 @@ const App = () => {
                 </a>
               </div>
             </div>
-            
+
             <div>
               <h4 className="text-lg font-bold mb-4">Quick Links</h4>
               <ul className="space-y-2">
@@ -596,7 +749,7 @@ const App = () => {
                 <li><button onClick={() => scrollToSection('contact')} className="text-gray-400 hover:text-white">Contact</button></li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="text-lg font-bold mb-4">Contact Us</h4>
               <div className="space-y-3 text-gray-400">
@@ -614,14 +767,14 @@ const App = () => {
                 </div>
               </div>
             </div>
-            
+
             <div>
               <h4 className="text-lg font-bold mb-4">Newsletter</h4>
               <p className="text-gray-400 mb-4">Subscribe to our newsletter for tips and updates.</p>
               <form className="flex">
-                <input 
-                  type="email" 
-                  placeholder="Your email" 
+                <input
+                  type="email"
+                  placeholder="Your email"
                   className="flex-1 px-3 py-2 bg-gray-800 text-white rounded-l-md focus:outline-none"
                 />
                 <button className="px-4 py-2 bg-green-500 text-white rounded-r-md hover:bg-green-600 transition-colors">
@@ -630,15 +783,16 @@ const App = () => {
               </form>
             </div>
           </div>
-          
+
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
               © 2025 chittorgarh_vlog. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="#" className="text-gray-400 text-sm hover:text-white">Privacy Policy</a>
-              <a href="#" className="text-gray-400 text-sm hover:text-white">Terms of Service</a>
-              <a href="#" className="text-gray-400 text-sm hover:text-white">Cookie Policy</a>
+              <a href="/privacy" className="text-gray-400 text-sm hover:text-white">Privacy Policy</a>
+              <a href="/terms" className="text-gray-400 text-sm hover:text-white">Terms & Conditions</a>
+              <a href="/refund-policy" className="text-gray-400 text-sm hover:text-white">Refund Policy</a>
+              <a href="/contact" className="text-gray-400 text-sm hover:text-white">Contact Us</a>
             </div>
           </div>
         </div>
@@ -667,12 +821,12 @@ const App = () => {
                   <X size={20} />
                 </button>
               </div>
-              
+
               <div className="mb-6">
                 <div className="mb-4">
                   <label className="block text-sm font-medium mb-2">Full Name</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     name="name"
                     value={bookingData.name}
                     onChange={handleInputChange}
@@ -680,11 +834,11 @@ const App = () => {
                     placeholder="Your full name"
                   />
                 </div>
-                
+
                 <div className="mb-4">
                   <label className="block text-sm font-medium mb-2">Email Address</label>
-                  <input 
-                    type="email" 
+                  <input
+                    type="email"
                     name="email"
                     value={bookingData.email}
                     onChange={handleInputChange}
@@ -692,11 +846,11 @@ const App = () => {
                     placeholder="your@email.com"
                   />
                 </div>
-                
+
                 <div className="mb-4">
                   <label className="block text-sm font-medium mb-2">Contact Number</label>
-                  <input 
-                    type="tel" 
+                  <input
+                    type="tel"
                     name="contact"
                     value={bookingData.contact}
                     onChange={handleInputChange}
@@ -704,27 +858,49 @@ const App = () => {
                     placeholder="Your contact number"
                   />
                 </div>
-                
+
                 <div className="mb-4">
                   <label className="block text-sm font-medium mb-2">Upload Video (MP4)</label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <Upload className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-600 mb-2">Drag & drop your video here</p>
-                    <p className="text-sm text-gray-500 mb-2">or</p>
-                    <input 
-                      type="file" 
+                  <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${bookingData.videoFile ? 'border-green-500 bg-green-50' : 'border-gray-300'
+                    }`}>
+                    {bookingData.videoFile ? (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="flex flex-col items-center"
+                      >
+                        <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-3">
+                          <Check className="w-8 h-8 text-white" />
+                        </div>
+                        <p className="text-green-700 font-medium mb-1">{bookingData.videoFile.name}</p>
+                        <p className="text-sm text-green-600">
+                          {(bookingData.videoFile.size / (1024 * 1024)).toFixed(2)} MB
+                        </p>
+                        <label htmlFor="video-upload" className="mt-3 text-sm text-green-600 hover:text-green-700 cursor-pointer underline">
+                          Change Video
+                        </label>
+                      </motion.div>
+                    ) : (
+                      <>
+                        <Upload className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-600 mb-2">Drag & drop your video here</p>
+                        <p className="text-sm text-gray-500 mb-2">or</p>
+                        <label htmlFor="video-upload" className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors cursor-pointer inline-block">
+                          Browse Files
+                        </label>
+                        <p className="text-xs text-gray-500 mt-2">MP4 format only, max 500MB</p>
+                      </>
+                    )}
+                    <input
+                      type="file"
                       accept="video/mp4"
                       onChange={handleFileChange}
                       className="hidden"
                       id="video-upload"
                     />
-                    <label htmlFor="video-upload" className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors cursor-pointer">
-                      Browse Files
-                    </label>
-                    <p className="text-xs text-gray-500 mt-2">MP4 format only, max 500MB</p>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-medium mb-2">Selected Plan</label>
@@ -736,8 +912,8 @@ const App = () => {
                   </div>
                 </div>
               </div>
-              
-              <button 
+
+              <button
                 onClick={submitBooking}
                 disabled={bookingStatus === 'submitting' || paymentProcessing}
                 className="w-full py-3 bg-green-500 text-white rounded-full font-medium hover:bg-green-600 transition-colors flex items-center justify-center"
@@ -781,7 +957,7 @@ const App = () => {
               <p className="text-sm text-gray-500 mb-6">
                 Booking ID: {bookingId}
               </p>
-              <button 
+              <button
                 onClick={() => {
                   setShowSuccess(false);
                   setSelectedPlan(null);

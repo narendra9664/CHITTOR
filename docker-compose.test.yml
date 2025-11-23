@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  backend-test:
+    build:
+      context: ./backend
+      dockerfile: dockerfile
+    container_name: chittorgarh_vlog_backend_test
+    environment:
+      - DEBUG=True
+      - DJANGO_SECRET_KEY=test-secret-key-for-ci
+      - ALLOWED_HOSTS=localhost,127.0.0.1
+      - DATABASE_URL=postgresql://postgres:postgres@db-test:5432/test_db
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-rzp_test_dummy}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-dummy_secret}
+    depends_on:
+      - db-test
+    volumes:
+      - ./backend:/app  # Mount for development/testing
+    command: >
+      sh -c "python manage.py test &&
+             echo 'Backend tests completed'"
+
+  db-test:
+    image: postgres:13
+    container_name: chittorgarh_vlog_db_test
+    environment:
+      - POSTGRES_DB=test_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5433:5432"  # Different port to avoid conflicts
+
+volumes:
+  postgres_data_test:

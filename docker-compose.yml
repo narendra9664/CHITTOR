@@ -8,16 +8,10 @@ services:
     container_name: chittorgarh_vlog_backend
     ports:
       - "8000:8000"
-    environment:
-      - DEBUG=False
-      - DJANGO_SECRET_KEY=your-super-secret-key-here-replace-this
-      - ALLOWED_HOSTS=*
-      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
-      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
-      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
-      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
+    env_file:
+      - ./backend/.env.docker
     volumes:
-      - media_volume:/app/media  # Persistent storage for uploaded videos
+      - media_volume:/app/chittorgarh_vlog/media # Persistent storage for uploaded videos
     depends_on:
       - db
     command: >
@@ -32,9 +26,8 @@ services:
     container_name: chittorgarh_vlog_frontend
     ports:
       - "3000:3000"
-    environment:
-      - VITE_API_URL=http://localhost:8000
-      - VITE_RAZORPAY_KEY=${RAZORPAY_KEY_ID}
+    env_file:
+      - ./frontend/.env.docker
     depends_on:
       - backend
 

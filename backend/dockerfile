@@ -7,10 +7,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+WORKDIR /app/chittorgarh_vlog
+
 EXPOSE 8000
 
 # Create media directory for video uploads
-RUN mkdir -p /app/media
+RUN mkdir -p /app/chittorgarh_vlog/media
 
 # Use gunicorn for production-like server inside container
 ENV PYTHONUNBUFFERED=1
