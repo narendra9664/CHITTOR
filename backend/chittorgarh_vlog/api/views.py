@@ -666,7 +666,11 @@ def download_mediakit_pdf(request, filename):
                           status=status.HTTP_404_NOT_FOUND)
         
         # Serve file
-        response = FileResponse(open(pdf_path, 'rb'), content_type='application/pdf')
+        content_type = 'application/pdf'
+        if safe_filename.endswith('.zip'):
+            content_type = 'application/zip'
+            
+        response = FileResponse(open(pdf_path, 'rb'), content_type=content_type)
         response['Content-Disposition'] = f'attachment; filename="{safe_filename}"'
         
         logger.info(f"Media kit downloaded: {safe_filename}")
@@ -695,14 +699,14 @@ def get_pdf_info(request):
             },
             'free_pdfs': [
                 {
-                    'name': 'Media Kit Presentation',
-                    'filename': 'media-kit-presentation.pdf',
-                    'description': 'Brand presentation and promotional materials'
+                    'name': 'Media Kit (English)',
+                    'filename': 'media-kit-english.pdf',
+                    'description': 'Brand presentation and promotional materials in English'
                 },
                 {
-                    'name': 'Media Kit Brochure',
-                    'filename': 'media-kit-brochure.pdf',
-                    'description': 'Business information and brand guidelines'
+                    'name': 'Media Kit (Hindi)',
+                    'filename': 'media-kit-hindi.pdf',
+                    'description': 'Brand presentation and promotional materials in Hindi'
                 }
             ]
         })

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Download, FileText, CheckCircle, CreditCard, Loader } from 'lucide-react';
+import { ArrowLeft, Download, FileText, CheckCircle, CreditCard, Loader, Code } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -315,6 +315,38 @@ const Downloads = () => {
                         </div>
                     </div>
                 )}
+
+                {/* Heritage View Source Code Section */}
+                <div className="mt-16 mb-16">
+                    <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
+                        <div className="bg-purple-100 p-2 rounded-lg">
+                            <Code className="w-8 h-8 text-purple-600" />
+                        </div>
+                        Heritage View Project
+                    </h2>
+                    <p className="text-gray-600 mb-6">
+                        Download the complete source code for our Heritage View virtual tour project.
+                    </p>
+
+                    <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all border border-gray-200 hover:border-purple-300">
+                        <div className="flex items-start gap-4">
+                            <div className="bg-purple-100 p-3 rounded-lg">
+                                <Code className="w-8 h-8 text-purple-600" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-xl font-bold mb-2">Heritage View Source Code</h3>
+                                <p className="text-gray-600 mb-4 text-sm">Full source code including HTML, CSS, JS and assets for the virtual tour experience.</p>
+                                <button
+                                    onClick={() => handleDownloadFreePDF('heritage-view.zip', 'Heritage View Source', 15.0)}
+                                    className="bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center gap-2 shadow-md hover:shadow-lg"
+                                >
+                                    <Download className="w-5 h-5" />
+                                    Download Source Code (ZIP)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Info Footer */}
                 <div className="mt-12 bg-white rounded-xl shadow-lg p-6 border border-gray-200">
