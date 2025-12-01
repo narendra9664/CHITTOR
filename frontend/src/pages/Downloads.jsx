@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Download, FileText, CheckCircle, CreditCard, Loader, Code } from 'lucide-react';
+import { ArrowLeft, Download, FileText, CheckCircle, CreditCard, Loader, Code, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -16,6 +17,17 @@ const Downloads = () => {
     const [purchaseData, setPurchaseData] = useState({ name: '', email: '', phone: '' });
     const [processing, setProcessing] = useState(false);
     const [downloadToken, setDownloadToken] = useState(null);
+
+    // Free PDF download modal state
+    const [showFreeDownloadModal, setShowFreeDownloadModal] = useState(false);
+    const [selectedFreePdf, setSelectedFreePdf] = useState(null);
+    const [freeDownloadData, setFreeDownloadData] = useState({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: ''
+    });
+    const [isSubmittingFree, setIsSubmittingFree] = useState(false);
 
     useEffect(() => {
         fetchPDFInfo();
@@ -35,6 +47,13 @@ const Downloads = () => {
     const handleInputChange = (e) => {
         setPurchaseData({
             ...purchaseData,
+            [e.target.name]: e.target.value
+        });
+    };
+
+    const handleFreeDownloadInputChange = (e) => {
+        setFreeDownloadData({
+            ...freeDownloadData,
             [e.target.name]: e.target.value
         });
     };
@@ -107,21 +126,60 @@ const Downloads = () => {
         }
     };
 
-    const handleDownloadFreePDF = async (filename, pdfName, fileSize) => {
-        try {
-            // Track download
-            await axios.post(`${API_URL}/api/mediakit-track/`, {
-                pdf_name: pdfName,
-                file_size_mb: fileSize
-            });
+    const handleInitiateFreeDownload = (pdf) => {
+        setSelectedFreePdf(pdf);
+        setShowFreeDownloadModal(true);
+    };
 
-            // Download file
-            window.open(`${API_URL}/api/mediakit-download/${filename}/`, '_blank');
-        } catch (error) {
-            console.error('Error downloading media kit:', error);
-            // Still allow download even if tracking fails
-            window.open(`${API_URL}/api/mediakit-download/${filename}/`, '_blank');
+    const handleFreeDownloadSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!freeDownloadData.firstName || !freeDownloadData.lastName || !freeDownloadData.email || !freeDownloadData.phone) {
+            alert('Please fill in all required fields.');
+            return;
         }
+
+        setIsSubmittingFree(true);
+
+        // Collect user data
+        const userData = {
+            name: `${freeDownloadData.firstName} ${freeDownloadData.lastName}`,
+            email: freeDownloadData.email,
+            phone: freeDownloadData.phone,
+            timestamp: new Date().toISOString(),
+            source: 'free_pdf_download',
+            pdf_name: selectedFreePdf.name
+        };
+
+        console.log('User data collected for free download:', userData);
+
+        // Simulate API call
+        setTimeout(async () => {
+            try {
+                // Track download
+                await axios.post(`${API_URL}/api/mediakit-track/`, {
+                    pdf_name: selectedFreePdf.name,
+                    file_size_mb: 3.2
+                });
+
+                // Download file
+                window.open(`${API_URL}/api/mediakit-download/${selectedFreePdf.filename}/`, '_blank');
+
+                // Show success message
+                alert('Thank you! Your download will start shortly.');
+
+                // Reset form and close modal
+                setFreeDownloadData({ firstName: '', lastName: '', email: '', phone: '' });
+                setShowFreeDownloadModal(false);
+                setSelectedFreePdf(null);
+            } catch (error) {
+                console.error('Error downloading media kit:', error);
+                // Still allow download even if tracking fails
+                window.open(`${API_URL}/api/mediakit-download/${selectedFreePdf.filename}/`, '_blank');
+            } finally {
+                setIsSubmittingFree(false);
+            }
+        }, 1500);
     };
 
     if (loading) {
@@ -302,7 +360,7 @@ const Downloads = () => {
                                             <h3 className="text-xl font-bold mb-2">{pdf.name}</h3>
                                             <p className="text-gray-600 mb-4 text-sm">{pdf.description}</p>
                                             <button
-                                                onClick={() => handleDownloadFreePDF(pdf.filename, pdf.name, 3.2)}
+                                                onClick={() => handleInitiateFreeDownload(pdf)}
                                                 className="bg-green-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-600 transition-colors flex items-center gap-2 shadow-md hover:shadow-lg"
                                             >
                                                 <Download className="w-5 h-5" />
@@ -356,11 +414,128 @@ const Downloads = () => {
                     </p>
                     <div className="flex flex-wrap gap-4 text-sm text-gray-700">
                         <span>📧 narendrakumar9664@gmail.com</span>
-                        <span>📱 +91 6377 595 978</span>
+                        <span>📱 +91 7733 072 738</span>
                         <span>📸 @chittorgarh_vlog</span>
                     </div>
                 </div>
             </div>
+
+            {/* Free Download Modal */}
+            <AnimatePresence>
+                {showFreeDownloadModal && selectedFreePdf && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        onClick={() => setShowFreeDownloadModal(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+                        >
+                            <div className="bg-gradient-to-r from-green-600 to-green-700 p-6 text-white relative">
+                                <button
+                                    onClick={() => setShowFreeDownloadModal(false)}
+                                    className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors"
+                                >
+                                    <X className="w-6 h-6" />
+                                </button>
+                                <h3 className="text-2xl font-bold mb-2">Download {selectedFreePdf.name}</h3>
+                                <p className="text-green-100">Enter your details to get instant access</p>
+                            </div>
+
+                            <form onSubmit={handleFreeDownloadSubmit} className="p-6 space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            First Name *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="firstName"
+                                            value={freeDownloadData.firstName}
+                                            onChange={handleFreeDownloadInputChange}
+                                            required
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                                            placeholder="John"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Last Name *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="lastName"
+                                            value={freeDownloadData.lastName}
+                                            onChange={handleFreeDownloadInputChange}
+                                            required
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                                            placeholder="Doe"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Email Address *
+                                    </label>
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={freeDownloadData.email}
+                                        onChange={handleFreeDownloadInputChange}
+                                        required
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                                        placeholder="john@example.com"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Phone Number *
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        name="phone"
+                                        value={freeDownloadData.phone}
+                                        onChange={handleFreeDownloadInputChange}
+                                        required
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                                        placeholder="+91 98765 43210"
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isSubmittingFree}
+                                    className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 rounded-lg font-bold text-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    {isSubmittingFree ? (
+                                        <>
+                                            <Loader className="w-5 h-5 animate-spin" />
+                                            Processing...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Download className="w-5 h-5" />
+                                            Download Now
+                                        </>
+                                    )}
+                                </button>
+
+                                <p className="text-xs text-gray-500 text-center">
+                                    By downloading, you agree to receive updates about our services
+                                </p>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

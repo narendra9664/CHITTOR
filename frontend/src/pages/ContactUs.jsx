@@ -69,8 +69,8 @@ const ContactUs = () => {
                                     </div>
                                     <div>
                                         <h3 className="font-bold mb-1">Phone</h3>
-                                        <a href="tel:+916377595978" className="text-green-100 hover:text-white">
-                                            +91 6377 595 978
+                                        <a href="tel:+917733072738" className="text-green-100 hover:text-white">
+                                            +91 7733 072 738
                                         </a>
                                         <p className="text-green-100 text-sm mt-1">Mon-Sat, 10 AM - 7 PM IST</p>
                                     </div>
@@ -154,7 +154,7 @@ const ContactUs = () => {
                                             value={formData.phone}
                                             onChange={handleChange}
                                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-                                            placeholder="+91 6377 595 978"
+                                            placeholder="+91 7733 072 738"
                                         />
                                     </div>
 

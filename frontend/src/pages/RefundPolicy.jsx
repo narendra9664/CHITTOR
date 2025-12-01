@@ -83,7 +83,7 @@ const RefundPolicy = () => {
                     <section>
                         <h2 className="text-2xl font-bold mb-3">Cancellation Process</h2>
                         <ol className="list-decimal pl-6 space-y-2">
-                            <li>Contact us via email at narendrakumar9664@gmail.com or call +91 6377 595 978</li>
+                            <li>Contact us via email at narendrakumar9664@gmail.com or call +91 7733 072 738</li>
                             <li>Provide your Booking ID and reason for cancellation</li>
                             <li>Our team will review your request within 24-48 hours</li>
                             <li>If approved, refund will be initiated within 2 business days</li>
@@ -131,7 +131,7 @@ const RefundPolicy = () => {
                                 <strong>Email:</strong> <a href="mailto:narendrakumar9664@gmail.com" className="text-green-600 hover:underline">narendrakumar9664@gmail.com</a>
                             </p>
                             <p className="mb-2">
-                                <strong>Phone:</strong> <a href="tel:+916377595978" className="text-green-600 hover:underline">+91 6377 595 978</a>
+                                <strong>Phone:</strong> <a href="tel:+917733072738" className="text-green-600 hover:underline">+91 7733 072 738</a>
                             </p>
                             <p className="mb-2">
                                 <strong>Instagram:</strong> <a href="https://instagram.com/chittorgarh_vlog" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline">@chittorgarh_vlog</a> (Owner: Pawan Salvi)

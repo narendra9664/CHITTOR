@@ -385,18 +385,18 @@ const App = () => {
                 Pricing
               </button>
               <Link
-                to="/downloads"
+                to="/heritage-view"
                 className="text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 flex items-center gap-1"
               >
                 <Download className="w-4 h-4" />
-                Downloads
+                Heritage View
               </Link>
-              <button
-                onClick={() => scrollToSection('contact')}
-                className={`text-sm font-medium transition-colors ${activeSection === 'contact' ? 'text-green-500' : 'text-gray-600 hover:text-gray-900'}`}
+              <Link
+                to="/contact"
+                className="text-sm font-medium transition-colors text-gray-600 hover:text-gray-900"
               >
                 Contact
-              </button>
+              </Link>
             </nav>
 
             <div className="flex items-center space-x-4">
@@ -444,19 +444,20 @@ const App = () => {
                   Pricing
                 </button>
                 <Link
-                  to="/downloads"
+                  to="/heritage-view"
                   className="text-sm font-medium py-2 text-gray-600 flex items-center gap-2"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <Download className="w-4 h-4" />
-                  Downloads
+                  Heritage View
                 </Link>
-                <button
-                  onClick={() => scrollToSection('contact')}
-                  className={`text-sm font-medium py-2 ${activeSection === 'contact' ? 'text-green-500' : 'text-gray-600'}`}
+                <Link
+                  to="/contact"
+                  className="text-sm font-medium py-2 text-gray-600"
+                  onClick={() => setIsMenuOpen(false)}
                 >
                   Contact
-                </button>
+                </Link>
                 <button className="px-6 py-2 bg-green-500 text-white rounded-full text-sm font-medium hover:bg-green-600 transition-colors">
                   Get Started
                 </button>
@@ -757,7 +758,7 @@ const App = () => {
                 </div>
                 <div className="flex items-start gap-3">
                   <Phone className="w-5 h-5 mt-1" />
-                  <span>+91 98765 43210</span>
+                  <span>+91 7733 072 738</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 mt-1" />

@@ -98,7 +98,7 @@ const TermsAndConditions = () => {
                             <br />
                             Email: narendrakumar9664@gmail.com
                             <br />
-                            Phone: +91 6377 595 978
+                            Phone: +91 7733 072 738
                             <br />
                             Instagram: @chittorgarh_vlog (Owner: Pawan Salvi)
                         </p>
