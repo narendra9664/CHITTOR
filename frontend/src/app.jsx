@@ -361,7 +361,7 @@ const App = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-8">
-              <div className="text-2xl font-bold text-gray-900">chittorgarh_vlog</div>
+              <div className="text-2xl font-bold text-gray-900">Chittorgarh<span className="text-green-500">Vlog</span></div>
             </div>
 
             {/* Desktop Navigation */}
@@ -525,20 +525,55 @@ const App = () => {
       </section>
 
       {/* Trusted Brands Row */}
-      <section className="py-12 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold text-center mb-8">Trusted by Local Businesses</h2>
-          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12">
-            {trustedBrands.map((brand, index) => (
+      <section className="py-12 bg-gray-50 overflow-hidden">
+        <div className="container mx-auto px-4 mb-8">
+          <h2 className="text-2xl font-bold text-center">Trusted by Local Businesses</h2>
+        </div>
+
+        <div className="relative flex overflow-x-hidden">
+          <motion.div
+            className="flex py-4 gap-12 whitespace-nowrap"
+            animate={{
+              x: [0, -1035], // Adjust based on content width
+            }}
+            transition={{
+              x: {
+                repeat: Infinity,
+                repeatType: "loop",
+                duration: 20,
+                ease: "linear",
+              },
+            }}
+          >
+            {[...trustedBrands, ...trustedBrands, ...trustedBrands, ...trustedBrands].map((brand, index) => (
               <div
                 key={index}
-                className={`flex items-center justify-center w-40 h-16 bg-white rounded-lg shadow-sm hover:shadow-md transition-all ${index === currentBrandIndex ? 'scale-110' : ''
-                  }`}
+                className="flex items-center justify-center min-w-[160px] h-16 bg-white rounded-lg shadow-sm hover:shadow-md transition-all"
               >
                 <span className="text-lg font-bold text-gray-800">{brand.name}</span>
               </div>
             ))}
-          </div>
+          </motion.div>
+
+          <motion.div
+            className="flex py-4 gap-12 whitespace-nowrap absolute left-full"
+            animate={{
+              x: [0, -1035],
+            }}
+            transition={{
+              x: {
+                repeat: Infinity,
+                repeatType: "loop",
+                duration: 20,
+                ease: "linear",
+              },
+            }}
+            aria-hidden="true"
+          >
+            {/* Duplicate for seamless loop if needed, but the first one with enough duplicates is usually simpler. 
+                 Let's stick to a single long strip. 
+             */}
+          </motion.div>
         </div>
       </section>
 
@@ -546,7 +581,7 @@ const App = () => {
       <section id="services" className="py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Why Choose chittorgarh_vlog?</h2>
+            <h2 className="text-3xl font-bold mb-4">Why Choose Chittorgarh<span className="text-green-500">Vlog</span>?</h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               We're not just another video service – we're your local partner in reaching Chittorgarh's vibrant community.
             </p>
@@ -575,7 +610,7 @@ const App = () => {
                 <div>
                   <h3 className="text-xl font-bold mb-2">Proven Results</h3>
                   <p className="text-gray-300">
-                    Average reach with chittorgarh_vlog is around 15,000 to 30,000 per story. Our content consistently delivers high engagement and measurable results.
+                    Average reach with ChittorgarhVlog is around 15,000 to 30,000 per story. Our content consistently delivers high engagement and measurable results.
                   </p>
                 </div>
               </div>
@@ -719,7 +754,7 @@ const App = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
-              <div className="text-2xl font-bold mb-4">chittorgarh_vlog</div>
+              <div className="text-2xl font-bold mb-4">Chittorgarh<span className="text-green-500">Vlog</span></div>
               <p className="text-gray-400 mb-4">
                 Connecting local businesses with Chittorgarh's vibrant community through professional video storytelling.
               </p>
@@ -762,7 +797,7 @@ const App = () => {
                 </div>
                 <div className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 mt-1" />
-                  <span>123 Creative Street, Chittorgarh, India</span>
+                  <span>House No. 2, Nayapura, Mandor, Jodhpur, Rajasthan</span>
                 </div>
               </div>
             </div>
@@ -785,7 +820,7 @@ const App = () => {
 
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
-              © 2025 chittorgarh_vlog. All rights reserved.
+              © 2025 ChittorgarhVlog. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a href="/privacy" className="text-gray-400 text-sm hover:text-white">Privacy Policy</a>

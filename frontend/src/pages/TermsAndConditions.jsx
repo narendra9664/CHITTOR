@@ -23,7 +23,7 @@ const TermsAndConditions = () => {
                     <section>
                         <h2 className="text-2xl font-bold mb-3">1. Acceptance of Terms</h2>
                         <p>
-                            By accessing and using chittorgarh_vlog's services, you agree to be bound by these Terms and Conditions.
+                            By accessing and using ChittorgarhVlog's services, you agree to be bound by these Terms and Conditions.
                             If you do not agree with any part of these terms, you may not use our services.
                         </p>
                     </section>
@@ -31,7 +31,7 @@ const TermsAndConditions = () => {
                     <section>
                         <h2 className="text-2xl font-bold mb-3">2. Service Description</h2>
                         <p>
-                            chittorgarh_vlog provides video promotion services for businesses and individuals through our Instagram
+                            ChittorgarhVlog provides video promotion services for businesses and individuals through our Instagram
                             platform. We promote customer-provided content to our audience of 100,000+ followers in Chittorgarh.
                         </p>
                     </section>
@@ -78,7 +78,7 @@ const TermsAndConditions = () => {
                     <section>
                         <h2 className="text-2xl font-bold mb-3">7. Limitation of Liability</h2>
                         <p>
-                            chittorgarh_vlog is not liable for any indirect, incidental, or consequential damages arising from
+                            ChittorgarhVlog is not liable for any indirect, incidental, or consequential damages arising from
                             the use of our services. Our maximum liability is limited to the amount paid for the specific service.
                         </p>
                     </section>

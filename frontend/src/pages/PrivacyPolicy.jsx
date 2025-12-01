@@ -118,7 +118,7 @@ const PrivacyPolicy = () => {
                             <br />
                             Owner: Pawan Salvi
                             <br />
-                            Location: Chittorgarh, Rajasthan, India
+                            Location: House No. 2, Nayapura, Mandor, Jodhpur, Rajasthan
                         </p>
                     </section>
                 </div>

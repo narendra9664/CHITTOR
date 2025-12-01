@@ -159,7 +159,7 @@ const HeritageView = () => {
                         className="relative rounded-3xl overflow-hidden shadow-2xl mb-16"
                     >
                         <img
-                            src="/HARITAGE VIEW/downloads/chittorgarh.jpg.jpg"
+                            src="/chittorgarh-fort.jpg"
                             alt="Chittorgarh Fort"
                             className="w-full h-[500px] object-cover"
                         />
