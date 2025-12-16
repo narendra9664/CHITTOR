@@ -27,7 +27,11 @@ const App = () => {
   const [bookingStatus, setBookingStatus] = useState('idle');
   const [bookingId, setBookingId] = useState('');
   const [paymentProcessing, setPaymentProcessing] = useState(false);
+
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showPaymentOptions, setShowPaymentOptions] = useState(false);
+  const [showManualPayment, setShowManualPayment] = useState(false);
+  const [manualTxnId, setManualTxnId] = useState('');
 
   // Mock data for services
   const services = [
@@ -256,8 +260,10 @@ const App = () => {
       if (response.ok) {
         setBookingId(data.booking_id);
         setBookingStatus('booking_created');
-        // Proceed to payment
-        initiatePayment(data.booking_id);
+        setBookingId(data.booking_id);
+        setBookingStatus('booking_created');
+        // Show payment options instead of auto-initiating Razorpay
+        setShowPaymentOptions(true);
       } else {
         alert(`Booking failed: ${data.error || 'Unknown error'}`);
         setBookingStatus('error');
@@ -343,6 +349,41 @@ const App = () => {
     } catch (error) {
       console.error('Error initiating payment:', error);
       setBookingStatus('error');
+    } finally {
+      setPaymentProcessing(false);
+    }
+  };
+
+  const submitManualPayment = async () => {
+    if (!manualTxnId.trim()) {
+      alert('Please enter the Transaction ID');
+      return;
+    }
+
+    setPaymentProcessing(true);
+    try {
+      const response = await fetch(`${API_URL}/api/submit-manual-payment/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          booking_id: bookingId,
+          transaction_id: manualTxnId
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setShowManualPayment(false);
+        setShowSuccess(true);
+        setBookingStatus('completed');
+      } else {
+        alert(`Error: ${data.error || 'Failed to submit'}`);
+      }
+    } catch (error) {
+      console.error('Error submitting manual payment:', error);
+      alert('An error occurred. Please try again.');
     } finally {
       setPaymentProcessing(false);
     }
@@ -781,6 +822,9 @@ const App = () => {
                 <li><button onClick={() => scrollToSection('services')} className="text-gray-400 hover:text-white">Services</button></li>
                 <li><button onClick={() => scrollToSection('pricing')} className="text-gray-400 hover:text-white">Pricing</button></li>
                 <li><button onClick={() => scrollToSection('contact')} className="text-gray-400 hover:text-white">Contact</button></li>
+                <li><Link to="/privacy" className="text-gray-400 hover:text-white">Privacy Policy</Link></li>
+                <li><Link to="/terms" className="text-gray-400 hover:text-white">Terms & Conditions</Link></li>
+                <li><Link to="/refund-policy" className="text-gray-400 hover:text-white">Refund Policy</Link></li>
               </ul>
             </div>
 
@@ -801,39 +845,146 @@ const App = () => {
                 </div>
               </div>
             </div>
-
-            <div>
-              <h4 className="text-lg font-bold mb-4">Newsletter</h4>
-              <p className="text-gray-400 mb-4">Subscribe to our newsletter for tips and updates.</p>
-              <form className="flex">
-                <input
-                  type="email"
-                  placeholder="Your email"
-                  className="flex-1 px-3 py-2 bg-gray-800 text-white rounded-l-md focus:outline-none"
-                />
-                <button className="px-4 py-2 bg-green-500 text-white rounded-r-md hover:bg-green-600 transition-colors">
-                  Subscribe
-                </button>
-              </form>
-            </div>
           </div>
-
-          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400 text-sm">
-              © 2025 ChittorgarhVlog. All rights reserved.
-            </p>
-            <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="/privacy" className="text-gray-400 text-sm hover:text-white">Privacy Policy</a>
-              <a href="/terms" className="text-gray-400 text-sm hover:text-white">Terms & Conditions</a>
-              <a href="/refund-policy" className="text-gray-400 text-sm hover:text-white">Refund Policy</a>
-              <a href="/contact" className="text-gray-400 text-sm hover:text-white">Contact Us</a>
-            </div>
+          <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
+            <p>&copy; {new Date().getFullYear()} ChittorgarhVlog. All rights reserved.</p>
           </div>
         </div>
       </footer>
 
-      {/* Booking Modal */}
+      {/* Payment Options Modal */}
       <AnimatePresence>
+        {showPaymentOptions && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl relative"
+            >
+              <button
+                onClick={() => setShowPaymentOptions(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+
+              <h3 className="text-2xl font-bold mb-6 text-center">Choose Payment Method</h3>
+
+              <div className="space-y-4">
+                <button
+                  onClick={() => {
+                    setShowPaymentOptions(false);
+                    initiatePayment(bookingId);
+                  }}
+                  className="w-full py-4 px-6 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-3"
+                >
+                  <Zap className="w-6 h-6" />
+                  Pay Online (Instant)
+                </button>
+
+                <div className="relative flex py-2 items-center">
+                  <div className="flex-grow border-t border-gray-300"></div>
+                  <span className="flex-shrink-0 mx-4 text-gray-400">OR</span>
+                  <div className="flex-grow border-t border-gray-300"></div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setShowPaymentOptions(false);
+                    setShowManualPayment(true);
+                  }}
+                  className="w-full py-4 px-6 bg-gray-100 text-gray-800 rounded-xl font-bold text-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-3"
+                >
+                  <FileText className="w-6 h-6" />
+                  Manual Payment (UPI/Bank)
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Manual Payment Modal */}
+      <AnimatePresence>
+        {showManualPayment && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl relative max-h-[90vh] overflow-y-auto"
+            >
+              <button
+                onClick={() => setShowManualPayment(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+
+              <h3 className="text-2xl font-bold mb-4 text-center">Manual Payment</h3>
+
+              <div className="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-200">
+                <p className="text-sm text-gray-600 mb-2 font-medium">Scan QR Code or Transfer to:</p>
+                <div className="space-y-1 text-sm">
+                  <p><span className="font-bold">UPI ID:</span> narendrakumar9664@oksbi</p>
+                  <p><span className="font-bold">Bank:</span> State Bank of Bikaner and Jaipur</p>
+                  <p><span className="font-bold">Account:</span> 61266429919</p>
+                  <p><span className="font-bold">IFSC:</span> SBIN0032343</p>
+                </div>
+                {/* Dynamic QR Code for UPI */}
+                <div className="mt-4 flex flex-col items-center justify-center">
+                  <div className="bg-white p-2 border border-gray-200 rounded-lg shadow-sm">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=narendrakumar9664@oksbi&pn=ChittorgarhVlog`}
+                      alt="Payment QR Code"
+                      className="w-32 h-32"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">Scan with any UPI App</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Enter Transaction ID / UTR
+                  </label>
+                  <input
+                    type="text"
+                    value={manualTxnId}
+                    onChange={(e) => setManualTxnId(e.target.value)}
+                    placeholder="e.g. 1234567890"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+
+                <button
+                  onClick={submitManualPayment}
+                  disabled={paymentProcessing}
+                  className="w-full py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition-colors disabled:opacity-50"
+                >
+                  {paymentProcessing ? 'Submitting...' : 'Submit Payment Details'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+
+      {/* Booking Modal */}
+      < AnimatePresence >
         {selectedPlan && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -964,10 +1115,10 @@ const App = () => {
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence >
 
       {/* Success Modal */}
-      <AnimatePresence>
+      < AnimatePresence >
         {showSuccess && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -1011,8 +1162,8 @@ const App = () => {
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
-    </div>
+      </AnimatePresence >
+    </div >
   );
 };
 

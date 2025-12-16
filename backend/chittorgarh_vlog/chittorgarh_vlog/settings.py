@@ -182,3 +182,40 @@ CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'True' if DEBU
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Logging Configuration (Important for Railway)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'api': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
+# CSRF Trusted Origins
+CSRF_TRUSTED_ORIGINS = ['https://*.railway.app'] # Allow all railway subdomains by default
+if frontend_url:
+    CSRF_TRUSTED_ORIGINS.append(frontend_url)
+    if frontend_url.endswith('/'):
+        CSRF_TRUSTED_ORIGINS.append(frontend_url.rstrip('/'))
+    else:
+        CSRF_TRUSTED_ORIGINS.append(frontend_url + '/')

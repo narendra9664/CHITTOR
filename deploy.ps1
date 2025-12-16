@@ -9,7 +9,8 @@ Write-Host "📦 Step 1: Adding all changes to git..." -ForegroundColor Yellow
 git add .
 if ($LASTEXITCODE -eq 0) {
     Write-Host "✅ Changes added successfully!" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "❌ Failed to add changes" -ForegroundColor Red
     exit 1
 }
@@ -18,19 +19,19 @@ Write-Host ""
 # Step 2: Commit changes
 Write-Host "💾 Step 2: Committing changes..." -ForegroundColor Yellow
 $commitMessage = @"
-feat: Update contact number, add Heritage View page, and implement info gathering modals
+feat: Production Ready & Manual Payments
 
-- Updated phone number from +91 6377 595 978 to +91 7733 072 738 across all pages
-- Fixed Contact navigation to redirect to /contact page instead of scrolling
-- Created standalone Heritage View landing page at /heritage-view
-- Added info gathering modals for all PDF downloads
-- Updated navigation from Downloads to Heritage View
+- Implemented Manual Payment with QR Code & Bank Details
+- Configured production settings (DEBUG=False, Security headers)
+- Finalized deployment readiness
+- Added dynamic UPI QR code generation
 "@
 
 git commit -m $commitMessage
 if ($LASTEXITCODE -eq 0) {
     Write-Host "✅ Changes committed successfully!" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "⚠️  Nothing to commit or commit failed" -ForegroundColor Yellow
 }
 Write-Host ""
@@ -40,7 +41,8 @@ Write-Host "🌐 Step 3: Pushing to GitHub..." -ForegroundColor Yellow
 git push origin main
 if ($LASTEXITCODE -eq 0) {
     Write-Host "✅ Successfully pushed to GitHub!" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "❌ Failed to push to GitHub" -ForegroundColor Red
     exit 1
 }

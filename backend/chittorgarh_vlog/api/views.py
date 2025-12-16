@@ -315,6 +315,90 @@ def verify_payment(request):
         return Response({'error': 'An error occurred while verifying the payment'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@api_view(['POST'])
+def submit_manual_payment(request):
+    """Submit manual payment details (Transaction ID)"""
+    # Rate limiting
+    if not check_rate_limit(request, 'manual_payment', max_requests=5, window=600):
+        return Response({'error': 'Rate limit exceeded'}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+    try:
+        booking_id = request.data.get('booking_id')
+        transaction_id = request.data.get('transaction_id')
+
+        if not booking_id or not transaction_id:
+            return Response({'error': 'Booking ID and Transaction ID are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            booking = Booking.objects.get(booking_id=booking_id)
+        except Booking.DoesNotExist:
+            return Response({'error': 'Booking not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        booking.payment_method = 'manual'
+        booking.transaction_id = transaction_id
+        # We keep status as pending or move to payment_received? 
+        # For manual, we want admin to verify. But to stop the user from worrying, we can say "Payment Submitted".
+        # Let's set it to 'payment_received' so it shows up in the list as paid/processed, 
+        # but the admin knows it's manual via payment_method.
+        booking.status = 'payment_received' 
+        booking.save()
+        
+        logger.info(f"Manual payment submitted for booking: {booking.booking_id}, txn: {transaction_id}")
+
+        # Send confirmation email
+        try:
+            from django.core.mail import send_mail
+            from django.utils.html import escape
+            
+            # 1. Send to Customer
+            if booking.email and settings.EMAIL_HOST_USER:
+                sanitized_booking_id = escape(booking.booking_id)
+                send_mail(
+                    subject='Payment Submitted - Chittorgarh Vlog',
+                    message=f"Thank you! We have received your manual payment details (Txn: {transaction_id}). Your booking ID is {sanitized_booking_id}. We will verify the transaction and process your video shortly.",
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=[booking.email],
+                    fail_silently=True,
+                )
+            
+            # 2. Send to Admin
+            if settings.EMAIL_HOST_USER:
+                video_url = "No video uploaded"
+                if booking.video_file:
+                    video_url = request.build_absolute_uri(booking.video_file.url)
+                
+                send_mail(
+                    subject=f'💰 Manual Payment: {booking.name} - ₹{booking.amount}',
+                    message=f"""
+                    Manual Payment Submitted!
+                    
+                    Name: {booking.name}
+                    Email: {booking.email}
+                    Phone: {booking.contact}
+                    Plan: {booking.plan}
+                    Amount: ₹{booking.amount}
+                    Transaction ID: {transaction_id}
+                    
+                    ----------------------------------------
+                    VIDEO DOWNLOAD LINK:
+                    {video_url}
+                    ----------------------------------------
+                    
+                    Please verify the transaction ID in your bank account before processing.
+                    """,
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=[settings.EMAIL_HOST_USER],
+                    fail_silently=True,
+                )
+        except Exception as email_error:
+            logger.warning(f"Failed to send confirmation email: {str(email_error)}")
+
+        return Response({'success': True, 'booking_id': booking.booking_id, 'message': 'Manual payment submitted successfully'})
+    except Exception as e:
+        logger.error(f"Error submitting manual payment: {str(e)}")
+        return Response({'error': 'An error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 @api_view(['GET'])
 def booking_status(request, booking_id):
     try:
