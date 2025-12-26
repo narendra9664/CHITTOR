@@ -269,8 +269,8 @@ def verify_payment(request):
             if booking.email and settings.EMAIL_HOST_USER:
                 sanitized_booking_id = escape(booking.booking_id)
                 send_mail(
-                    subject='Booking Confirmation - Chittorgarh Vlog',
-                    message=f"Thank you for booking! Your booking ID is {sanitized_booking_id}. We have received your video and will process it shortly.",
+                    subject='Order Bill & Confirmation - Chittorgarh Vlog',
+                    message=f"Dear {booking.name},\n\nThank you for your payment! Your booking is confirmed.\n\nOrder Details:\n- Booking ID: {sanitized_booking_id}\n- Plan: {booking.plan}\n- Price Paid: ₹{booking.amount}\n\nYour story/post will go live on Chittorgarh Vlog within 24 hours.\n\nThank you for choosing us!",
                     from_email=settings.EMAIL_HOST_USER,
                     recipient_list=[booking.email],
                     fail_silently=True,
@@ -354,8 +354,8 @@ def submit_manual_payment(request):
             if booking.email and settings.EMAIL_HOST_USER:
                 sanitized_booking_id = escape(booking.booking_id)
                 send_mail(
-                    subject='Payment Submitted - Chittorgarh Vlog',
-                    message=f"Thank you! We have received your manual payment details (Txn: {transaction_id}). Your booking ID is {sanitized_booking_id}. We will verify the transaction and process your video shortly.",
+                    subject='Order Bill & Payment Received - Chittorgarh Vlog',
+                    message=f"Dear {booking.name},\n\nWe have received your manual payment details (Txn: {transaction_id}). Your booking is currently being processed.\n\nOrder Details:\n- Booking ID: {sanitized_booking_id}\n- Plan: {booking.plan}\n- Price Paid: ₹{booking.amount}\n\nYour story/post will go live on Chittorgarh Vlog within 24 hours of final verification.\n\nThank you for your business!",
                     from_email=settings.EMAIL_HOST_USER,
                     recipient_list=[booking.email],
                     fail_silently=True,
@@ -653,6 +653,80 @@ def verify_pdf_payment(request):
         logger.error(f"Error verifying PDF payment: {str(e)}")
         return Response({'error': 'Payment verification failed'}, 
                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def submit_pdf_manual_payment(request):
+    """
+    Submit manual payment details for PDF purchase
+    """
+    try:
+        purchase_id = request.data.get('purchase_id')
+        transaction_id = request.data.get('transaction_id')
+        
+        if not purchase_id or not transaction_id:
+            return Response({'error': 'Purchase ID and Transaction ID are required'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            pdf_purchase = PDFPurchase.objects.get(id=purchase_id)
+        except PDFPurchase.DoesNotExist:
+            return Response({'error': 'Purchase record not found'}, 
+                          status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if already completed
+        if pdf_purchase.payment_status == 'completed':
+            return Response({
+                'success': True,
+                'download_token': pdf_purchase.download_token,
+                'pdf_name': pdf_purchase.pdf_name
+            })
+            
+        # Update record
+        pdf_purchase.razorpay_payment_id = f"manual_{transaction_id}"
+        pdf_purchase.payment_status = 'completed'
+        
+        # Generate download token
+        download_token = secrets.token_urlsafe(32)
+        pdf_purchase.download_token = download_token
+        pdf_purchase.save()
+        
+        logger.info(f"Manual PDF payment submitted: {pdf_purchase.id}, txn: {transaction_id}")
+        
+        # Send admin notification
+        try:
+            from django.core.mail import send_mail
+            send_mail(
+                subject=f'💰 Manual PDF Purchase: {pdf_purchase.name} - ₹{pdf_purchase.amount}',
+                message=f"""
+                Manual PDF Payment Submitted!
+                
+                Name: {pdf_purchase.name}
+                Email: {pdf_purchase.email}
+                Phone: {pdf_purchase.phone}
+                PDF: {pdf_purchase.pdf_name}
+                Amount: ₹{pdf_purchase.amount}
+                Transaction ID: {transaction_id}
+                
+                Please verify this transaction in your bank account.
+                """,
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[settings.EMAIL_HOST_USER],
+                fail_silently=True
+            )
+        except:
+            pass
+            
+        return Response({
+            'success': True,
+            'download_token': download_token,
+            'pdf_name': pdf_purchase.pdf_name,
+            'message': 'Manual payment submission successful'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error submitting manual PDF payment: {str(e)}")
+        return Response({'error': 'An error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])

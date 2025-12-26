@@ -295,33 +295,67 @@ class BookingViewTest(TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertIn('error', response.json())
 
-    def test_verify_payment_success(self):
-        """Test payment verification with valid data (mocking)"""
+    def test_submit_manual_payment(self):
+        """Test submitting manual payment details"""
         # First create a booking
-        booking_response = self.client.post(
-            reverse('create_booking'),
-            data=self.valid_booking_data
-        )
-        booking_id = booking_response.json()['booking_id']
-
-        # Mock payment verification data (in real scenario, these would be real Razorpay values)
-        payment_data = {
-            'razorpay_order_id': 'order_test123',
-            'razorpay_payment_id': 'pay_test123',
-            'razorpay_signature': 'signature_test123',
-            'booking_id': booking_id
+        booking_data = {
+            'name': 'Manual Customer',
+            'email': 'manual@example.com',
+            'contact': '9876543210',
+            'plan': 'One Day Story',
+            'amount': '999.00'
         }
+        booking_res = self.client.post('/api/create/', data=booking_data)
+        booking_id = booking_res.json()['booking_id']
 
-        # Since we can't truly verify signatures in test without real keys, we'll check error handling
+        # Submit manual payment
+        manual_data = {
+            'booking_id': booking_id,
+            'transaction_id': 'TXN123456789'
+        }
         response = self.client.post(
-            reverse('verify_payment'),
-            data=json.dumps(payment_data),
+            '/api/submit-manual-payment/',
+            data=json.dumps(manual_data),
             content_type='application/json'
         )
 
-        # This should fail because our mock signature won't verify
-        # We're testing that the endpoint handles the validation properly
-        self.assertIn(response.status_code, [200, 400])  # Could be either depending on how the error is handled
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
+
+        # Verify status update
+        booking = Booking.objects.get(booking_id=booking_id)
+        self.assertEqual(booking.payment_method, 'manual')
+        self.assertEqual(booking.transaction_id, 'TXN123456789')
+        self.assertEqual(booking.status, 'payment_received')
+
+    def test_submit_pdf_manual_payment(self):
+        """Test submitting manual payment details for PDF"""
+        from .models import PDFPurchase
+        purchase = PDFPurchase.objects.create(
+            name='PDF Customer',
+            email='pdf@example.com',
+            phone='9876543210',
+            razorpay_order_id='order_123'
+        )
+
+        manual_data = {
+            'purchase_id': purchase.id,
+            'transaction_id': 'PDF_TXN_123'
+        }
+        response = self.client.post(
+            '/api/pdf-submit-manual-payment/',
+            data=json.dumps(manual_data),
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
+        self.assertIsNotNone(response.json()['download_token'])
+
+        # Verify status update
+        purchase.refresh_from_db()
+        self.assertEqual(purchase.payment_status, 'completed')
+        self.assertIn('manual_PDF_TXN_123', purchase.razorpay_payment_id)
 
     def test_verify_payment_invalid_booking(self):
         """Test payment verification with invalid booking ID"""

@@ -942,11 +942,20 @@ const App = () => {
                   <p><span className="font-bold">Account:</span> 61266429919</p>
                   <p><span className="font-bold">IFSC:</span> SBIN0032343</p>
                 </div>
+
+                <div className="mt-4 space-y-2 text-sm text-gray-700">
+                  <p className="font-bold">Step-by-Step Process:</p>
+                  <ol className="list-decimal pl-5 space-y-1">
+                    <li>Scan the QR code or Transfer to the bank details above.</li>
+                    <li><strong>Important:</strong> Send the screenshot of the payment to our WhatsApp number: <a href="https://wa.me/916377595978" target="_blank" className="text-green-600 font-bold hover:underline">+91 63775 95978</a></li>
+                    <li>Enter the Transaction ID below and hit Submit.</li>
+                  </ol>
+                </div>
                 {/* Dynamic QR Code for UPI */}
                 <div className="mt-4 flex flex-col items-center justify-center">
                   <div className="bg-white p-2 border border-gray-200 rounded-lg shadow-sm">
                     <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=narendrakumar9664@oksbi&pn=ChittorgarhVlog`}
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=narendrakumar9664@oksbi&pn=ChittorgarhVlog&am=${bookingData.amount}&cu=INR`}
                       alt="Payment QR Code"
                       className="w-32 h-32"
                     />

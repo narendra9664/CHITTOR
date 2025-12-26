@@ -15,6 +15,7 @@ urlpatterns = [
     path('pdf-info/', views.get_pdf_info, name='get_pdf_info'),
     path('pdf-purchase/', views.create_pdf_purchase, name='create_pdf_purchase'),
     path('pdf-verify-payment/', views.verify_pdf_payment, name='verify_pdf_payment'),
+    path('pdf-submit-manual-payment/', views.submit_pdf_manual_payment, name='submit_pdf_manual_payment'),
     path('pdf-download/<str:token>/', views.download_paid_pdf, name='download_paid_pdf'),
     path('mediakit-track/', views.track_mediakit_download, name='track_mediakit_download'),
     path('mediakit-download/<str:filename>/', views.download_mediakit_pdf, name='download_mediakit_pdf'),

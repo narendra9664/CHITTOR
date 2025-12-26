@@ -17,6 +17,11 @@ const Downloads = () => {
     const [purchaseData, setPurchaseData] = useState({ name: '', email: '', phone: '' });
     const [processing, setProcessing] = useState(false);
     const [downloadToken, setDownloadToken] = useState(null);
+    const [showPaymentOptions, setShowPaymentOptions] = useState(false);
+    const [showManualPayment, setShowManualPayment] = useState(false);
+    const [manualTxnId, setManualTxnId] = useState('');
+    const [currentPurchaseId, setCurrentPurchaseId] = useState(null);
+    const [razorpayOrderId, setRazorpayOrderId] = useState(null);
 
     // Free PDF download modal state
     const [showFreeDownloadModal, setShowFreeDownloadModal] = useState(false);
@@ -69,53 +74,89 @@ const Downloads = () => {
         try {
             // Create purchase order
             const response = await axios.post(`${API_URL}/api/pdf-purchase/`, purchaseData);
-            const { order_id, amount } = response.data;
+            const { order_id, purchase_id } = response.data;
 
-            // Open Razorpay
-            const options = {
-                key: RAZORPAY_KEY,
-                amount: amount * 100,
-                currency: 'INR',
-                name: 'Chittorgarh Vlog',
-                description: 'Chittorgarh Tourism Guide PDF',
-                order_id: order_id,
-                handler: async function (razorpayResponse) {
-                    // Verify payment
-                    try {
-                        const verifyResponse = await axios.post(`${API_URL}/api/pdf-verify-payment/`, {
-                            razorpay_order_id: razorpayResponse.razorpay_order_id,
-                            razorpay_payment_id: razorpayResponse.razorpay_payment_id,
-                            razorpay_signature: razorpayResponse.razorpay_signature
-                        });
-
-                        if (verifyResponse.data.success) {
-                            setDownloadToken(verifyResponse.data.download_token);
-                            setShowPurchaseForm(false);
-                            alert('Payment successful! You can now download the PDF.');
-                        }
-                    } catch (error) {
-                        alert('Payment verification failed: ' + (error.response?.data?.error || 'Unknown error'));
-                    }
-                    setProcessing(false);
-                },
-                prefill: {
-                    name: purchaseData.name,
-                    email: purchaseData.email,
-                    contact: purchaseData.phone
-                },
-                theme: {
-                    color: '#22c55e'
-                }
-            };
-
-            const rzp = new window.Razorpay(options);
-            rzp.on('payment.failed', function (response) {
-                alert('Payment failed: ' + response.error.description);
-                setProcessing(false);
-            });
-            rzp.open();
+            setCurrentPurchaseId(purchase_id);
+            setRazorpayOrderId(order_id);
+            setProcessing(false);
+            setShowPurchaseForm(false);
+            setShowPaymentOptions(true);
         } catch (error) {
             alert('Error: ' + (error.response?.data?.error || 'Failed to initiate purchase'));
+            setProcessing(false);
+        }
+    };
+
+    const initiateRazorpay = async () => {
+        if (!razorpayOrderId) return;
+
+        setProcessing(true);
+        // Open Razorpay
+        const options = {
+            key: RAZORPAY_KEY,
+            amount: 9 * 100, // ₹9 default, but should ideally come from backend
+            currency: 'INR',
+            name: 'Chittorgarh Vlog',
+            description: 'Chittorgarh Tourism Guide PDF',
+            order_id: razorpayOrderId,
+            handler: async function (razorpayResponse) {
+                // Verify payment
+                try {
+                    const verifyResponse = await axios.post(`${API_URL}/api/pdf-verify-payment/`, {
+                        razorpay_order_id: razorpayResponse.razorpay_order_id,
+                        razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+                        razorpay_signature: razorpayResponse.razorpay_signature
+                    });
+
+                    if (verifyResponse.data.success) {
+                        setDownloadToken(verifyResponse.data.download_token);
+                        setShowPaymentOptions(false);
+                        alert('Payment successful! You can now download the PDF.');
+                    }
+                } catch (error) {
+                    alert('Payment verification failed: ' + (error.response?.data?.error || 'Unknown error'));
+                }
+                setProcessing(false);
+            },
+            prefill: {
+                name: purchaseData.name,
+                email: purchaseData.email,
+                contact: purchaseData.phone
+            },
+            theme: {
+                color: '#22c55e'
+            }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (response) {
+            alert('Payment failed: ' + response.error.description);
+            setProcessing(false);
+        });
+        rzp.open();
+    };
+
+    const submitManualPayment = async () => {
+        if (!manualTxnId.trim()) {
+            alert('Please enter Transaction ID');
+            return;
+        }
+
+        setProcessing(true);
+        try {
+            const response = await axios.post(`${API_URL}/api/pdf-submit-manual-payment/`, {
+                purchase_id: currentPurchaseId,
+                transaction_id: manualTxnId
+            });
+
+            if (response.data.success) {
+                setDownloadToken(response.data.download_token);
+                setShowManualPayment(false);
+                alert('Success! Your manual payment details have been submitted. You can now download the PDF.');
+            }
+        } catch (error) {
+            alert('Error: ' + (error.response?.data?.error || 'Failed to submit'));
+        } finally {
             setProcessing(false);
         }
     };
@@ -419,6 +460,129 @@ const Downloads = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Payment Options Modal */}
+            <AnimatePresence>
+                {showPaymentOptions && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl relative"
+                        >
+                            <button
+                                onClick={() => setShowPaymentOptions(false)}
+                                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                            >
+                                <X size={24} />
+                            </button>
+
+                            <h3 className="text-2xl font-bold mb-6 text-center">Payment Method</h3>
+
+                            <div className="space-y-4">
+                                <button
+                                    onClick={() => {
+                                        setShowPaymentOptions(false);
+                                        initiateRazorpay();
+                                    }}
+                                    className="w-full py-4 px-6 bg-green-500 text-white rounded-xl font-bold text-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-3"
+                                >
+                                    <CreditCard className="w-6 h-6" />
+                                    Pay Online (Instant)
+                                </button>
+
+                                <div className="relative flex py-2 items-center">
+                                    <div className="flex-grow border-t border-gray-300"></div>
+                                    <span className="flex-shrink-0 mx-4 text-gray-400">OR</span>
+                                    <div className="flex-grow border-t border-gray-300"></div>
+                                </div>
+
+                                <button
+                                    onClick={() => {
+                                        setShowPaymentOptions(false);
+                                        setShowManualPayment(true);
+                                    }}
+                                    className="w-full py-4 px-6 bg-gray-100 text-gray-800 rounded-xl font-bold text-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-3"
+                                >
+                                    <FileText className="w-6 h-6" />
+                                    Manual (UPI/Bank)
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Manual Payment Modal */}
+            <AnimatePresence>
+                {showManualPayment && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl relative"
+                        >
+                            <button
+                                onClick={() => setShowManualPayment(false)}
+                                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                            >
+                                <X size={24} />
+                            </button>
+
+                            <h3 className="text-2xl font-bold mb-4 text-center">Manual Payment</h3>
+
+                            <div className="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-200">
+                                <p className="text-sm text-gray-600 mb-2 font-medium">Transfer to:</p>
+                                <div className="space-y-1 text-sm">
+                                    <p><span className="font-bold">UPI ID:</span> narendrakumar9664@oksbi</p>
+                                    <p><span className="font-bold">Bank:</span> SBBJ / SBI</p>
+                                    <p><span className="font-bold">Account:</span> 61266429919</p>
+                                    <p><span className="font-bold">IFSC:</span> SBIN0032343</p>
+                                </div>
+                                <div className="mt-4 flex flex-col items-center justify-center">
+                                    <div className="bg-white p-2 border border-gray-200 rounded-lg shadow-sm">
+                                        <img
+                                            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=narendrakumar9664@oksbi&pn=ChittorgarhVlog`}
+                                            alt="Payment QR Code"
+                                            className="w-32 h-32"
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-gray-500 mt-2">Scan with any UPI App</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <input
+                                    type="text"
+                                    value={manualTxnId}
+                                    onChange={(e) => setManualTxnId(e.target.value)}
+                                    placeholder="Enter Transaction ID / UTR"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                />
+                                <button
+                                    onClick={submitManualPayment}
+                                    disabled={processing}
+                                    className="w-full py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition-colors disabled:opacity-50"
+                                >
+                                    {processing ? 'Submitting...' : 'Submit Payment Details'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Free Download Modal */}
             <AnimatePresence>
