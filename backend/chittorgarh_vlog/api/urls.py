@@ -7,6 +7,7 @@ urlpatterns = [
     path('create-order/', views.create_order, name='create_order'),
     path('verify-payment/', views.verify_payment, name='verify_payment'),
     path('submit-manual-payment/', views.submit_manual_payment, name='submit_manual_payment'),
+    path('send-thank-you/', views.send_thank_you_email, name='send_thank_you_email'),
     path('status/<str:booking_id>/', views.booking_status, name='booking_status'),
     path('pdf/<str:booking_id>/', views.generate_pdf, name='generate_pdf'),
     path('bookings/', views.list_bookings, name='list_bookings'),

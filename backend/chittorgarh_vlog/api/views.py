@@ -54,6 +54,22 @@ def get_client_ip(request):
     return ip
 
 
+def sanitize_input(value):
+    """Sanitize user input to prevent XSS and injection attacks"""
+    if not value:
+        return value
+    # Remove any HTML tags
+    import re
+    from django.utils.html import escape
+    # Strip HTML tags
+    clean = re.sub(r'<[^>]+>', '', str(value))
+    # Escape HTML entities
+    clean = escape(clean)
+    # Remove potentially dangerous characters
+    clean = re.sub(r'[<>"\']', '', clean)
+    return clean.strip()
+
+
 @api_view(['POST'])
 def create_booking(request):
     """Create a booking record and save the video file locally.
@@ -264,13 +280,58 @@ def verify_payment(request):
         try:
             from django.core.mail import send_mail
             from django.utils.html import escape
+            from datetime import datetime, timedelta
             
-            # 1. Send to Customer
+            # Calculate expected go-live time (within 24 hours)
+            now = datetime.now()
+            go_live_time = now + timedelta(hours=24)
+            go_live_formatted = go_live_time.strftime("%B %d, %Y at %I:%M %p")
+            
+            # 1. Send Congratulations Email to Customer
             if booking.email and settings.EMAIL_HOST_USER:
                 sanitized_booking_id = escape(booking.booking_id)
+                customer_email_message = f"""
+🎉 CONGRATULATIONS! 🎉
+
+Dear {booking.name},
+
+Thank you for choosing ChittorgarhVlog! Your payment has been successfully received.
+
+═══════════════════════════════════════
+📋 ORDER DETAILS
+═══════════════════════════════════════
+• Booking ID: {sanitized_booking_id}
+• Plan: {booking.plan}
+• Amount Paid: ₹{booking.amount}
+• Payment Status: ✅ CONFIRMED
+• Order Date: {now.strftime("%B %d, %Y at %I:%M %p")}
+
+═══════════════════════════════════════
+📅 WHEN WILL YOUR VIDEO GO LIVE?
+═══════════════════════════════════════
+Your story/post will be published on our official Instagram page:
+📸 @chittorgarhvlog
+
+Expected Go-Live Time: {go_live_formatted}
+(Within 24 hours of payment confirmation)
+
+You will receive a notification once your content is live!
+
+═══════════════════════════════════════
+📞 NEED HELP?
+═══════════════════════════════════════
+• WhatsApp: +91 63775 95978
+• Email: narendrakumar9664@gmail.com
+• Instagram: @chittorgarh_vlog
+
+Thank you for trusting ChittorgarhVlog to share your story with Chittorgarh!
+
+Warm regards,
+Team ChittorgarhVlog
+"""
                 send_mail(
-                    subject='Order Bill & Confirmation - Chittorgarh Vlog',
-                    message=f"Dear {booking.name},\n\nThank you for your payment! Your booking is confirmed.\n\nOrder Details:\n- Booking ID: {sanitized_booking_id}\n- Plan: {booking.plan}\n- Price Paid: ₹{booking.amount}\n\nYour story/post will go live on Chittorgarh Vlog within 24 hours.\n\nThank you for choosing us!",
+                    subject=f'🎉 Congratulations! Your Order #{sanitized_booking_id} is Confirmed - ChittorgarhVlog',
+                    message=customer_email_message,
                     from_email=settings.EMAIL_HOST_USER,
                     recipient_list=[booking.email],
                     fail_silently=True,
@@ -298,6 +359,11 @@ def verify_payment(request):
                     VIDEO DOWNLOAD LINK (Valid for ~24h on Railway):
                     {video_url}
                     ----------------------------------------
+                    
+                    ACTION REQUIRED:
+                    1. Download the video immediately
+                    2. Post on @chittorgarhvlog by {go_live_formatted}
+                    3. Send confirmation to customer
                     
                     If the video is missing or link is broken, contact the user immediately via WhatsApp: {booking.contact}
                     """,
@@ -349,13 +415,60 @@ def submit_manual_payment(request):
         try:
             from django.core.mail import send_mail
             from django.utils.html import escape
+            from datetime import datetime, timedelta
             
-            # 1. Send to Customer
+            # Calculate expected go-live time (within 24 hours)
+            now = datetime.now()
+            go_live_time = now + timedelta(hours=24)
+            go_live_formatted = go_live_time.strftime("%B %d, %Y at %I:%M %p")
+            
+            # 1. Send Congratulations Email to Customer
             if booking.email and settings.EMAIL_HOST_USER:
                 sanitized_booking_id = escape(booking.booking_id)
+                customer_email_message = f"""
+🎉 CONGRATULATIONS! 🎉
+
+Dear {booking.name},
+
+Thank you for choosing ChittorgarhVlog! Your manual payment has been received.
+
+═══════════════════════════════════════
+📋 ORDER DETAILS
+═══════════════════════════════════════
+• Booking ID: {sanitized_booking_id}
+• Plan: {booking.plan}
+• Amount Paid: ₹{booking.amount}
+• Payment Method: Manual (UPI/Bank Transfer)
+• Transaction ID: {transaction_id}
+• Payment Status: ✅ RECEIVED (Verification in Progress)
+• Order Date: {now.strftime("%B %d, %Y at %I:%M %p")}
+
+═══════════════════════════════════════
+📅 WHEN WILL YOUR VIDEO GO LIVE?
+═══════════════════════════════════════
+Your story/post will be published on our official Instagram page:
+📸 @chittorgarhvlog
+
+Expected Go-Live Time: {go_live_formatted}
+(Within 24 hours of payment verification)
+
+You will receive a notification once your content is live!
+
+═══════════════════════════════════════
+📞 NEED HELP?
+═══════════════════════════════════════
+• WhatsApp: +91 63775 95978
+• Email: narendrakumar9664@gmail.com
+• Instagram: @chittorgarh_vlog
+
+Thank you for trusting ChittorgarhVlog to share your story with Chittorgarh!
+
+Warm regards,
+Team ChittorgarhVlog
+"""
                 send_mail(
-                    subject='Order Bill & Payment Received - Chittorgarh Vlog',
-                    message=f"Dear {booking.name},\n\nWe have received your manual payment details (Txn: {transaction_id}). Your booking is currently being processed.\n\nOrder Details:\n- Booking ID: {sanitized_booking_id}\n- Plan: {booking.plan}\n- Price Paid: ₹{booking.amount}\n\nYour story/post will go live on Chittorgarh Vlog within 24 hours of final verification.\n\nThank you for your business!",
+                    subject=f'🎉 Congratulations! Your Order #{sanitized_booking_id} is Confirmed - ChittorgarhVlog',
+                    message=customer_email_message,
                     from_email=settings.EMAIL_HOST_USER,
                     recipient_list=[booking.email],
                     fail_silently=True,
@@ -384,7 +497,13 @@ def submit_manual_payment(request):
                     {video_url}
                     ----------------------------------------
                     
-                    Please verify the transaction ID in your bank account before processing.
+                    ⚠️ ACTION REQUIRED:
+                    1. Verify the transaction ID in your bank account
+                    2. Download the video immediately
+                    3. Post on @chittorgarhvlog by {go_live_formatted}
+                    4. Send confirmation to customer
+                    
+                    WhatsApp contact: {booking.contact}
                     """,
                     from_email=settings.EMAIL_HOST_USER,
                     recipient_list=[settings.EMAIL_HOST_USER],
@@ -419,6 +538,122 @@ def booking_status(request, booking_id):
     except Exception as e:
         logger.error(f"Unexpected error getting booking status: {str(e)}")
         return Response({'error': 'An error occurred while retrieving booking status'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def send_thank_you_email(request):
+    """
+    Mark booking as completed and send thank you + feedback request email.
+    This should be called by admin after the video/post is live on Instagram.
+    """
+    try:
+        booking_id = request.data.get('booking_id')
+        instagram_post_link = request.data.get('instagram_link', '')
+        
+        if not booking_id:
+            return Response({'error': 'Booking ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            booking = Booking.objects.get(booking_id=booking_id)
+        except Booking.DoesNotExist:
+            return Response({'error': 'Booking not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Update status to completed
+        booking.status = 'completed'
+        booking.save()
+        
+        # Send thank you + feedback email
+        try:
+            from django.core.mail import send_mail
+            from django.utils.html import escape
+            from datetime import datetime
+            
+            if booking.email and settings.EMAIL_HOST_USER:
+                sanitized_booking_id = escape(booking.booking_id)
+                
+                feedback_link = "https://g.page/r/ENTER_YOUR_GOOGLE_REVIEW_LINK"  # Update with real link
+                instagram_page = "https://instagram.com/chittorgarh_vlog"
+                
+                thank_you_message = f"""
+🙏 THANK YOU FOR CHOOSING CHITTORGARHVLOG! 🙏
+
+Dear {booking.name},
+
+Your content is now LIVE! 🎉
+
+═══════════════════════════════════════
+📸 YOUR POST IS LIVE ON INSTAGRAM
+═══════════════════════════════════════
+{f'View your post: {instagram_post_link}' if instagram_post_link else f'Check out our page: {instagram_page}'}
+
+We hope you love how your story turned out!
+
+═══════════════════════════════════════
+📋 ORDER SUMMARY
+═══════════════════════════════════════
+• Booking ID: {sanitized_booking_id}
+• Plan: {booking.plan}
+• Amount Paid: ₹{booking.amount}
+• Status: ✅ COMPLETED
+• Completed On: {datetime.now().strftime("%B %d, %Y at %I:%M %p")}
+
+═══════════════════════════════════════
+⭐ WE'D LOVE YOUR FEEDBACK! ⭐
+═══════════════════════════════════════
+Your opinion matters to us! Please take a moment to share your experience:
+
+📝 Leave a Review: Reply to this email with your feedback
+📸 Tag us on Instagram: @chittorgarh_vlog
+
+Your positive reviews help us serve Chittorgarh better!
+
+═══════════════════════════════════════
+🎁 REFER & EARN
+═══════════════════════════════════════
+Know someone who needs video marketing in Chittorgarh?
+Refer them to us and get 10% off on your next order!
+
+═══════════════════════════════════════
+📞 CONTACT US
+═══════════════════════════════════════
+• WhatsApp: +91 63775 95978
+• Email: narendrakumar9664@gmail.com
+• Instagram: @chittorgarh_vlog
+
+Thank you again for trusting ChittorgarhVlog!
+We look forward to working with you again.
+
+With gratitude,
+Pawan Salvi
+Founder, ChittorgarhVlog
+"""
+                send_mail(
+                    subject=f'🙏 Thank You! Your Content is Now Live - Order #{sanitized_booking_id}',
+                    message=thank_you_message,
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=[booking.email],
+                    fail_silently=True,
+                )
+                
+                logger.info(f"Thank you email sent for booking: {booking.booking_id}")
+                
+        except Exception as email_error:
+            logger.warning(f"Failed to send thank you email: {str(email_error)}")
+            return Response({
+                'success': True, 
+                'booking_id': booking.booking_id, 
+                'message': 'Booking marked as completed but email failed to send'
+            })
+        
+        return Response({
+            'success': True, 
+            'booking_id': booking.booking_id, 
+            'message': 'Booking completed and thank you email sent'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error sending thank you email: {str(e)}")
+        return Response({'error': 'An error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])

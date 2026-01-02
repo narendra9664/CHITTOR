@@ -260,8 +260,6 @@ const App = () => {
       if (response.ok) {
         setBookingId(data.booking_id);
         setBookingStatus('booking_created');
-        setBookingId(data.booking_id);
-        setBookingStatus('booking_created');
         // Show payment options instead of auto-initiating Razorpay
         setShowPaymentOptions(true);
       } else {
@@ -270,6 +268,7 @@ const App = () => {
       }
     } catch (error) {
       console.error('Error creating booking:', error);
+      alert('Cannot connect to the server. Please make sure the backend is running.');
       setBookingStatus('error');
     }
   };
@@ -383,7 +382,7 @@ const App = () => {
       }
     } catch (error) {
       console.error('Error submitting manual payment:', error);
-      alert('An error occurred. Please try again.');
+      alert('Cannot connect to the server. Please check your connection and try again.');
     } finally {
       setPaymentProcessing(false);
     }
@@ -937,30 +936,28 @@ const App = () => {
               <div className="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-200">
                 <p className="text-sm text-gray-600 mb-2 font-medium">Scan QR Code or Transfer to:</p>
                 <div className="space-y-1 text-sm">
-                  <p><span className="font-bold">UPI ID:</span> narendrakumar9664@oksbi</p>
-                  <p><span className="font-bold">Bank:</span> State Bank of Bikaner and Jaipur</p>
-                  <p><span className="font-bold">Account:</span> 61266429919</p>
-                  <p><span className="font-bold">IFSC:</span> SBIN0032343</p>
+                  <p><span className="font-bold">Name:</span> NARENDRA KUMAR</p>
+                  <p><span className="font-bold">UPI ID:</span> 7733072738@naviaxis</p>
                 </div>
 
                 <div className="mt-4 space-y-2 text-sm text-gray-700">
                   <p className="font-bold">Step-by-Step Process:</p>
                   <ol className="list-decimal pl-5 space-y-1">
-                    <li>Scan the QR code or Transfer to the bank details above.</li>
+                    <li>Scan the QR code or Transfer to the UPI ID above.</li>
                     <li><strong>Important:</strong> Send the screenshot of the payment to our WhatsApp number: <a href="https://wa.me/916377595978" target="_blank" className="text-green-600 font-bold hover:underline">+91 63775 95978</a></li>
                     <li>Enter the Transaction ID below and hit Submit.</li>
                   </ol>
                 </div>
-                {/* Dynamic QR Code for UPI */}
+                {/* Custom QR Code Image */}
                 <div className="mt-4 flex flex-col items-center justify-center">
                   <div className="bg-white p-2 border border-gray-200 rounded-lg shadow-sm">
                     <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=narendrakumar9664@oksbi&pn=ChittorgarhVlog&am=${bookingData.amount}&cu=INR`}
-                      alt="Payment QR Code"
-                      className="w-32 h-32"
+                      src="/payment-qr.jpg"
+                      alt="Payment QR Code - NARENDRA KUMAR"
+                      className="w-40 h-auto"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">Scan with any UPI App</p>
+                  <p className="text-xs text-gray-500 mt-2">Scan with GPay, PhonePe, Paytm or any UPI App</p>
                 </div>
               </div>
 
