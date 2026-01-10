@@ -79,13 +79,25 @@ TEMPLATES = [
 WSGI_APPLICATION = 'chittorgarh_vlog.wsgi.application'
 
 
-# Database - prefer DATABASE_URL (Supabase) else fallback to sqlite
+# Database Selection
+# Priority: 1. DATABASE_URL (Postgres) | 2. DB_NAME (MySQL/PA) | 3. SQLite
 DATABASE_URL = os.environ.get('DATABASE_URL')
+DB_NAME = os.environ.get('DB_NAME')
+
 if DATABASE_URL:
-    # Supabase connection strings are usually standard but may contain special characters.
-    # dj-database-url handles most, but we ensure brackets are encoded just in case.
     safe_db_url = DATABASE_URL.replace('[', '%5B').replace(']', '%5D')
     DATABASES = {'default': dj_database_url.parse(safe_db_url, conn_max_age=600)}
+elif DB_NAME:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': DB_NAME,
+            'USER': os.environ.get('DB_USER'),
+            'PASSWORD': os.environ.get('DB_PASSWORD'),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', '3306'),
+        }
+    }
 else:
     DATABASES = {
         'default': {
