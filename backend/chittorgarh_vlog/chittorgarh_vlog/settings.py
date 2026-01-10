@@ -17,7 +17,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'replace-me-with-env-secret')
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'  # Default to False in production
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if os.environ.get('ALLOWED_HOSTS') else ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,.onrender.com,.pythonanywhere.com').split(',') if os.environ.get('ALLOWED_HOSTS') else ['localhost', '127.0.0.1', '.onrender.com', '.pythonanywhere.com']
 
 # Security settings
 SECURE_BROWSER_XSS_FILTER = True
@@ -82,8 +82,8 @@ WSGI_APPLICATION = 'chittorgarh_vlog.wsgi.application'
 # Database - prefer DATABASE_URL (Supabase) else fallback to sqlite
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
-    # Some connection strings may contain characters that confuse urlparse (like [ or ] in passwords).
-    # URL-encode brackets if present so dj-database-url can parse correctly.
+    # Supabase connection strings are usually standard but may contain special characters.
+    # dj-database-url handles most, but we ensure brackets are encoded just in case.
     safe_db_url = DATABASE_URL.replace('[', '%5B').replace(']', '%5D')
     DATABASES = {'default': dj_database_url.parse(safe_db_url, conn_max_age=600)}
 else:
@@ -212,7 +212,7 @@ LOGGING = {
 }
 
 # CSRF Trusted Origins
-CSRF_TRUSTED_ORIGINS = ['https://*.railway.app'] # Allow all railway subdomains by default
+CSRF_TRUSTED_ORIGINS = ['https://*.railway.app', 'https://*.onrender.com', 'https://*.pythonanywhere.com'] # Allow all subdomains by default
 if frontend_url:
     CSRF_TRUSTED_ORIGINS.append(frontend_url)
     if frontend_url.endswith('/'):
