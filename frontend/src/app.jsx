@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Check, Star, Zap, Shield, Camera, Video, FileText, Mail, Phone, MapPin, Instagram, Twitter, Facebook, Linkedin, ChevronDown, ChevronUp, Menu, X, Upload, Loader, Download } from 'lucide-react';
+import { ArrowRight, Check, Star, Zap, Shield, Camera, Video, FileText, Mail, Phone, MapPin, Instagram, Twitter, Facebook, Linkedin, ChevronDown, ChevronUp, Menu, X, Upload, Loader, Download, MessageCircle } from 'lucide-react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import './index.css';
@@ -237,6 +237,26 @@ const App = () => {
         videoFile: file
       }));
     }
+  };
+
+  const bookViaWhatsApp = () => {
+    if (!bookingData.name || !bookingData.contact) {
+      alert("Please enter your name and contact number.");
+      return;
+    }
+    const text = `Hello ChittorgarhVlog, I would like to book a plan!
+    
+*Details:*
+- *Name:* ${bookingData.name}
+- *Contact:* ${bookingData.contact}
+- *Email:* ${bookingData.email || 'N/A'}
+- *Plan Selected:* ${bookingData.plan}
+- *Price:* ₹${bookingData.amount}
+
+I will send my video files here.`;
+
+    const encodedText = encodeURIComponent(text);
+    window.open(`https://wa.me/916377595978?text=${encodedText}`, '_blank');
   };
 
   const submitBooking = async () => {
@@ -534,28 +554,15 @@ const App = () => {
               <div className="relative">
                 <div className="absolute inset-0 bg-green-500 rounded-full opacity-10 transform -rotate-6"></div>
                 <div className="relative bg-white p-6 rounded-2xl shadow-lg">
-                  <div
-                    className="aspect-video rounded-lg flex items-center justify-center overflow-hidden relative"
-                    style={{
-                      backgroundImage: 'url(https://images.unsplash.com/photo-1609920658906-8223bd289001?q=80&w=2000)',
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center'
-                    }}
-                  >
-                    {/* Dark overlay for better text visibility */}
-                    <div className="absolute inset-0 bg-black bg-opacity-40"></div>
-
-                    <div className="text-center relative z-10" ref={heroVideoRef} style={{ transformStyle: 'preserve-3d' }}>
-                      <div className="relative inline-block">
-                        {/* Glowing background effect */}
-                        <div className="video-icon-glow absolute inset-0 bg-green-400 rounded-full blur-xl opacity-60"></div>
-                        {/* Main play icon */}
-                        <div className="relative w-24 h-24 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-2xl cursor-pointer hover:scale-110 transition-transform">
-                          <Video className="w-12 h-12 text-white" />
-                        </div>
-                      </div>
-                      <p className="text-white font-bold text-xl drop-shadow-lg">Your story starts here</p>
-                    </div>
+                  <div className="aspect-video rounded-lg overflow-hidden relative shadow-2xl bg-black">
+                    <video 
+                      src="/hero-motion.mp4" 
+                      className="w-full h-full object-cover"
+                      autoPlay 
+                      loop 
+                      muted 
+                      playsInline
+                    />
                   </div>
                 </div>
               </div>
@@ -1050,47 +1057,7 @@ const App = () => {
                   />
                 </div>
 
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2">Upload Video (MP4)</label>
-                  <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${bookingData.videoFile ? 'border-green-500 bg-green-50' : 'border-gray-300'
-                    }`}>
-                    {bookingData.videoFile ? (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="flex flex-col items-center"
-                      >
-                        <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-3">
-                          <Check className="w-8 h-8 text-white" />
-                        </div>
-                        <p className="text-green-700 font-medium mb-1">{bookingData.videoFile.name}</p>
-                        <p className="text-sm text-green-600">
-                          {(bookingData.videoFile.size / (1024 * 1024)).toFixed(2)} MB
-                        </p>
-                        <label htmlFor="video-upload" className="mt-3 text-sm text-green-600 hover:text-green-700 cursor-pointer underline">
-                          Change Video
-                        </label>
-                      </motion.div>
-                    ) : (
-                      <>
-                        <Upload className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                        <p className="text-gray-600 mb-2">Drag & drop your video here</p>
-                        <p className="text-sm text-gray-500 mb-2">or</p>
-                        <label htmlFor="video-upload" className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors cursor-pointer inline-block">
-                          Browse Files
-                        </label>
-                        <p className="text-xs text-gray-500 mt-2">MP4 format only, max 500MB</p>
-                      </>
-                    )}
-                    <input
-                      type="file"
-                      accept="video/mp4"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      id="video-upload"
-                    />
-                  </div>
-                </div>
+
 
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
@@ -1104,20 +1071,36 @@ const App = () => {
                 </div>
               </div>
 
-              <button
-                onClick={submitBooking}
-                disabled={bookingStatus === 'submitting' || paymentProcessing}
-                className="w-full py-3 bg-green-500 text-white rounded-full font-medium hover:bg-green-600 transition-colors flex items-center justify-center"
-              >
-                {paymentProcessing ? (
-                  <>
-                    <Loader className="w-5 h-5 mr-2 animate-spin" />
-                    Processing Payment...
-                  </>
-                ) : (
-                  'Proceed to Payment'
-                )}
-              </button>
+              <div className="space-y-3">
+                <button
+                  onClick={submitBooking}
+                  disabled={bookingStatus === 'submitting' || paymentProcessing}
+                  className="w-full py-3 bg-green-500 text-white rounded-full font-medium hover:bg-green-600 transition-colors flex items-center justify-center"
+                >
+                  {paymentProcessing ? (
+                    <>
+                      <Loader className="w-5 h-5 mr-2 animate-spin" />
+                      Processing Payment...
+                    </>
+                  ) : (
+                    'Proceed to Payment'
+                  )}
+                </button>
+                
+                <div className="relative flex py-2 items-center">
+                  <div className="flex-grow border-t border-gray-200"></div>
+                  <span className="flex-shrink-0 mx-4 text-gray-400 text-sm">Or book directly on WhatsApp</span>
+                  <div className="flex-grow border-t border-gray-200"></div>
+                </div>
+
+                <button
+                  onClick={bookViaWhatsApp}
+                  className="w-full py-3 bg-[#25D366] text-white rounded-full font-medium hover:bg-[#128C7E] transition-colors flex items-center justify-center shadow-md"
+                >
+                  <MessageCircle className="w-5 h-5 mr-2" />
+                  Book via WhatsApp
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
