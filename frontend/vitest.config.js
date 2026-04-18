@@ -8,6 +8,13 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './vitest.setup.js',
     globals: true,
-    css: true,
+    css: false,
+    // Mock framer-motion and gsap at the module level
+    server: {
+      deps: {
+        // Inline these so vi.mock hoisting works correctly
+        inline: ['framer-motion', 'gsap'],
+      },
+    },
   },
 });

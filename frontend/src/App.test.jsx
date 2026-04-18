@@ -1,100 +1,202 @@
 // frontend/src/App.test.jsx
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { vi } from 'vitest';
-import App from './App';
-import '@testing-library/jest-dom';
+import { MemoryRouter } from 'react-router-dom';
 
-// Mock the Razorpay library
-global.Razorpay = vi.fn();
+// ── MUST be at top level so vitest can hoist them ────────────────
 
-// Mock the API calls
-global.fetch = vi.fn(() =>
-  Promise.resolve({
-    ok: true,
-    status: 200,
-    json: () => Promise.resolve({ booking_id: 'BK-TEST123', amount: 999 }),
-  })
-);
+vi.mock('gsap', () => ({
+  default: {
+    registerPlugin: vi.fn(),
+    to: vi.fn(() => ({ kill: vi.fn() })),
+    fromTo: vi.fn(() => ({ kill: vi.fn() })),
+    set: vi.fn(),
+  },
+  gsap: {
+    registerPlugin: vi.fn(),
+    to: vi.fn(() => ({ kill: vi.fn() })),
+    fromTo: vi.fn(() => ({ kill: vi.fn() })),
+    set: vi.fn(),
+  },
+}));
 
-describe('App Component', () => {
-  const renderApp = () => {
-    render(<App />);
+vi.mock('gsap/ScrollTrigger', () => ({
+  ScrollTrigger: { create: vi.fn(), refresh: vi.fn() },
+}));
+
+vi.mock('framer-motion', async () => {
+  const React = await import('react');
+
+  const noopComponent = (tag) =>
+    // eslint-disable-next-line react/display-name
+    React.forwardRef(
+      (
+        {
+          children,
+          initial, animate, exit, transition, variants,
+          whileHover, whileTap, whileInView, viewport,
+          layout, layoutId, drag, dragConstraints,
+          onAnimationComplete, onDragStart, onDrag, onDragEnd,
+          ...rest
+        },
+        ref
+      ) => React.createElement(tag, { ...rest, ref }, children)
+    );
+
+  const motion = new Proxy(
+    {},
+    { get: (_, tag) => noopComponent(tag) }
+  );
+
+  return {
+    motion,
+    AnimatePresence: ({ children }) => children,
+    useAnimation: () => ({ start: vi.fn(), stop: vi.fn() }),
+    useInView: () => true,
+    useMotionValue: (v) => ({ get: () => v, set: vi.fn() }),
+    useTransform: vi.fn(() => ({ get: vi.fn() })),
   };
+});
 
+// ── Import App AFTER mocks are declared ──────────────────────────
+import App from './app';
+
+// ── Helpers ───────────────────────────────────────────────────────
+const renderApp = () =>
+  render(
+    <MemoryRouter>
+      <App />
+    </MemoryRouter>
+  );
+
+// ─────────────────────────────────────────────────────────────────
+describe('App Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  test('renders main sections correctly', () => {
+  // Static content
+  test('renders hero headline', () => {
     renderApp();
-
-    // Check for main sections
-    expect(screen.getByText('Promote Your Brand to')).toBeInTheDocument();
-    expect(screen.getByText('Trusted by Local Businesses')).toBeInTheDocument();
-    expect(screen.getByText('Why Choose chittorgarh_vlog?')).toBeInTheDocument();
-    expect(screen.getByText('Ready to Reach Chittorgarh?')).toBeInTheDocument();
-    expect(screen.getByText('Success Stories')).toBeInTheDocument();
-    expect(screen.getByText('Simple, Transparent Pricing')).toBeInTheDocument();
+    expect(screen.getByText(/Promote Your Brand to/i)).toBeInTheDocument();
   });
 
-  test('booking modal opens when plan is selected', async () => {
+  test('renders pricing heading', () => {
     renderApp();
+    expect(screen.getByText(/Pick the Plan That/i)).toBeInTheDocument();
+  });
 
-    // Find and click on "Choose Plan" button for the "One Day Story" plan
-    const planButtons = screen.getAllByText('Choose Plan');
-    const oneDayPlanButton = planButtons[0]; // First plan is One Day Story
+  test('renders all four plan names', () => {
+    renderApp();
+    expect(screen.getByText('One Day Story')).toBeInTheDocument();
+    expect(screen.getByText("Two's Story & Post")).toBeInTheDocument();
+    expect(screen.getByText('Seven Days Premium')).toBeInTheDocument();
+    expect(screen.getByText('Permanent Posting')).toBeInTheDocument();
+  });
 
-    fireEvent.click(oneDayPlanButton);
+  test('renders stats follower count', () => {
+    renderApp();
+    expect(screen.getByText('1,00,000+')).toBeInTheDocument();
+  });
 
-    // Check that the booking modal opens
-    await waitFor(() => {
-      expect(screen.getByText('Book Your Plan')).toBeInTheDocument();
-    });
+  test('renders testimonials heading', () => {
+    renderApp();
+    expect(screen.getByText(/What Our Clients/i)).toBeInTheDocument();
+  });
 
-    // Check that form fields are present
-    expect(screen.getByPlaceholderText('Your full name')).toBeInTheDocument();
+  // Booking modal
+  test('opens booking modal on plan select', async () => {
+    renderApp();
+    fireEvent.click(screen.getAllByText(/Choose Plan/i)[0]);
+    await waitFor(() =>
+      expect(screen.getByPlaceholderText('Enter your full name')).toBeInTheDocument()
+    );
+    expect(screen.getByPlaceholderText('Your active number')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('your@email.com')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Your contact number')).toBeInTheDocument();
   });
 
-  test('handles form input changes', async () => {
+  test('WhatsApp button appears in modal', async () => {
     renderApp();
-
-    // Open the booking modal
-    const planButtons = screen.getAllByText('Choose Plan');
-    fireEvent.click(planButtons[0]);
-
+    fireEvent.click(screen.getAllByText(/Choose Plan/i)[0]);
     await waitFor(() => {
-      expect(screen.getByText('Book Your Plan')).toBeInTheDocument();
+      const modal = document.querySelector('.modal-overlay');
+      expect(modal).toBeTruthy();
+      expect(within(modal).getByText(/Submit via WhatsApp/i)).toBeInTheDocument();
     });
-
-    // Test input changes
-    const nameInput = screen.getByPlaceholderText('Your full name');
-    fireEvent.change(nameInput, { target: { value: 'John Doe' } });
-    expect(nameInput.value).toBe('John Doe');
-
-    const emailInput = screen.getByPlaceholderText('your@email.com');
-    fireEvent.change(emailInput, { target: { value: 'john@example.com' } });
-    expect(emailInput.value).toBe('john@example.com');
-
-    const contactInput = screen.getByPlaceholderText('Your contact number');
-    fireEvent.change(contactInput, { target: { value: '9876543210' } });
-    expect(contactInput.value).toBe('9876543210');
   });
 
-  test('sets booking data when plan is selected', () => {
+  test('modal shows plan price', async () => {
     renderApp();
+    fireEvent.click(screen.getAllByText(/Choose Plan/i)[0]); // One Day Story = ₹999
+    await waitFor(() => {
+      // The modal renders a price display — find it inside the modal overlay
+      const modal = document.querySelector('.modal-overlay');
+      expect(modal).toBeTruthy();
+      expect(within(modal).getByText(/₹999/)).toBeInTheDocument();
+    });
+  });
 
-    // This test verifies that selecting a plan sets the booking data correctly
-    // which is an important interaction in the component
-    const planButtons = screen.getAllByText('Choose Plan');
-    const firstPlanButton = planButtons[0]; // This is for the first plan
+  // Form interactions
+  test('name input accepts text', async () => {
+    renderApp();
+    fireEvent.click(screen.getAllByText(/Choose Plan/i)[0]);
+    await waitFor(() =>
+      expect(screen.getByPlaceholderText('Enter your full name')).toBeInTheDocument()
+    );
+    const input = screen.getByPlaceholderText('Enter your full name');
+    fireEvent.change(input, { target: { value: 'Ramesh Sharma' } });
+    expect(input.value).toBe('Ramesh Sharma');
+  });
 
-    fireEvent.click(firstPlanButton);
+  test('phone input accepts number', async () => {
+    renderApp();
+    fireEvent.click(screen.getAllByText(/Choose Plan/i)[0]);
+    await waitFor(() =>
+      expect(screen.getByPlaceholderText('Your active number')).toBeInTheDocument()
+    );
+    const input = screen.getByPlaceholderText('Your active number');
+    fireEvent.change(input, { target: { value: '9602221576' } });
+    expect(input.value).toBe('9602221576');
+  });
 
-    // Check that the booking data is set (we can verify this by checking if the form appears)
-    expect(screen.getByPlaceholderText('Your full name')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('your@email.com')).toBeInTheDocument();
+  test('alerts when WhatsApp clicked with empty fields', async () => {
+    vi.spyOn(window, 'alert').mockImplementation(() => {});
+    renderApp();
+    fireEvent.click(screen.getAllByText(/Choose Plan/i)[0]);
+    await waitFor(() => {
+      const modal = document.querySelector('.modal-overlay');
+      expect(modal).toBeTruthy();
+    });
+    // Click the WhatsApp submit button inside the modal
+    const modal = document.querySelector('.modal-overlay');
+    const waBtn = within(modal).getByText(/Submit via WhatsApp/i);
+    fireEvent.click(waBtn);
+    expect(window.alert).toHaveBeenCalledWith(
+      'Please enter your name and contact number.'
+    );
+  });
+
+  test('opens wa.me link when fields are filled', async () => {
+    vi.spyOn(window, 'open').mockImplementation(() => {});
+    renderApp();
+    fireEvent.click(screen.getAllByText(/Choose Plan/i)[0]);
+    await waitFor(() =>
+      expect(screen.getByPlaceholderText('Enter your full name')).toBeInTheDocument()
+    );
+    fireEvent.change(screen.getByPlaceholderText('Enter your full name'), {
+      target: { value: 'Test User' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Your active number'), {
+      target: { value: '9876543210' },
+    });
+    // Use getByRole to target the actual button (not the footer link text)
+    const modal = document.querySelector('.modal-overlay');
+    const waBtn = within(modal).getByText(/Submit via WhatsApp/i);
+    fireEvent.click(waBtn);
+    expect(window.open).toHaveBeenCalledWith(
+      expect.stringContaining('wa.me/919602221576'),
+      '_blank'
+    );
   });
 });
